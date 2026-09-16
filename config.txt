@@ -14,7 +14,7 @@ voice_channel_id=1545504582476628089
 
 auto_join_voice_2=true
 guild_id_2=1527634328098443395
-voice_channel_id_2=1545504582476628089
+voice_channel_id_2=1542766616796725379
 
 auto_join_voice_3=true
 guild_id_3=1527634328098443395
