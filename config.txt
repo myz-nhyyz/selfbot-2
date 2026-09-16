@@ -16,7 +16,7 @@ voice_channel_id_2=1545504582476628089
 
 auto_join_voice_3=true
 guild_id_3=1527634328098443395
-voice_channel_id_3=1545504582476628089
+voice_channel_id_3=1537555898577195281
 fakelive=true
 
 # elapsed, now, today, 1y, 3y, 30d, 180d
