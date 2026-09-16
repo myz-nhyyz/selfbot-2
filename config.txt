@@ -1,0 +1,40 @@
+token=
+token_2=
+token_3=
+
+application_id=1546092498063986698
+autochangecustomstatus=false
+autochangestream=false
+stream=true
+auto_join_voice=true
+guild_id=
+voice_channel_id=
+
+auto_join_voice_2=true
+guild_id_2=
+voice_channel_id_2=
+
+auto_join_voice_3=true
+guild_id_3=
+voice_channel_id_3=
+fakelive=true
+
+# elapsed, now, today, 1y, 3y, 30d, 180d
+start_time=now
+
+# 0=Playing, 1=Streaming, 2=Listening, 3=Watching, 5=Competing
+rpc_type=2       # token 1
+rpc_type_2=2     # token 2
+rpc_type_3=2     # token  3
+
+rpc_name=
+rpc_name_2=
+rpc_name_3=
+
+# game preset: roblox, minecraft, valorant, cs2, lol
+game_activity=
+
+# custom game app (ưu tiên hơn preset)
+game_activity_id=
+game_activity_name=
+game_activity_type=0
