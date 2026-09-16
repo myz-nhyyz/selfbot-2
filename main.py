@@ -807,9 +807,6 @@ class DiscordGateway:
 
     def start_fake_live(self, guild_id, channel_id):
         try:
-            # Chặn rejoin handler kích hoạt trong khi đang setup stream
-            self.rejoining_guilds.add(guild_id)
-
             # OP 18 STREAM_CREATE
             self.ws.send(json.dumps({
                 "op": 18,
@@ -822,6 +819,8 @@ class DiscordGateway:
             }))
             time.sleep(1)
             # OP 4 self_stream=True
+            # VOICE_STATE_UPDATE response sẽ có channel_id != None
+            # nên is_stream_event check trong handler xử lý được rồi
             self.ws.send(json.dumps({
                 "op": 4,
                 "d": {
@@ -837,12 +836,6 @@ class DiscordGateway:
             print(f"[+] [{self.account_name}] Fake live started in {channel_id}")
         except Exception:
             pass
-        finally:
-            # Nhả guard sau khi VOICE_STATE_UPDATE từ OP4 đã settle (~5s)
-            def _release_guard():
-                time.sleep(5)
-                self.rejoining_guilds.discard(guild_id)
-            threading.Thread(target=_release_guard, daemon=True).start()
 
     def _handle_event(self, data):
         event = data.get("t")
@@ -891,7 +884,6 @@ class DiscordGateway:
                             if self.auto_join_voice:
                                 self.rejoining_guilds.add(event_guild)
                                 def _do_rejoin(v, gid):
-                                    fakelive_started = False
                                     time.sleep(2)
                                     try:
                                         if self.ws and self.running:
@@ -908,17 +900,14 @@ class DiscordGateway:
                                                 self.current_voice_list.append(v)
                                             print(f"[+] [{self.account_name}] Rejoined voice: {v['channel_id']} ({v['guild_id']})")
                                             if self.fakelive:
+                                                self.pending_live[v["guild_id"]] = v
                                                 time.sleep(3)
                                                 self.start_fake_live(v["guild_id"], v["channel_id"])
-                                                fakelive_started = True
-                                                # start_fake_live tự nhả rejoining_guilds sau 5s
                                     except Exception:
                                         pass
                                     finally:
-                                        # Nếu fakelive đã chạy, nó tự giải phóng guard
-                                        # Nếu không, giải phóng ở đây
-                                        if not fakelive_started:
-                                            self.rejoining_guilds.discard(gid)
+                                        # Luôn nhả guard — để handler bắt được kick tiếp theo
+                                        self.rejoining_guilds.discard(gid)
                                 threading.Thread(target=_do_rejoin, args=(target, event_guild), daemon=True).start()
 
         if event == "MESSAGE_DELETE":
