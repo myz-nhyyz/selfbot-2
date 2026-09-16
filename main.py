@@ -1153,8 +1153,7 @@ def main():
     app_id           = config.get("application_id", "").strip()
     auto_custom      = config.get("autochangecustomstatus", "False").lower() == "true"
     auto_change_stream = config.get("autochangestream", "False").lower() == "true"
-    stream_enabled   = config.get("stream", "False").lower() == "true"
-    fakelive         = config.get("fakelive", "False").lower() == "true"
+    # stream và fakelive đọc per-token bên dưới (stream, stream_2, stream_3 / fakelive, fakelive_2, ...)
     # env var START_TIME override config.txt — Railway variable wins
     _env_st = os.environ.get("START_TIME", "").strip().strip('"').strip("'")
     _cfg_st = config.get("start_time", "now").strip().strip('"').strip("'")
@@ -1163,14 +1162,14 @@ def main():
     _src = "Railway env" if _env_st else "config.txt"
     print(f"[*] start_time: {start_time_mode!r} (from {_src}) → {start_time} seconds")
 
-    # load stream config once — shared across all accounts
+    # load stream config một lần — any per-token stream=true sẽ dùng
     sc          = None
     asset_cache = {}
-    if stream_enabled and app_id:
+    if app_id:
         sc = load_stream_config()
         if sc is None or not sc.get("line1"):
-            stream_enabled = False
-            print("[!] stream.txt missing or line1 not set — stream disabled")
+            sc = None
+            print("[!] stream.txt missing or line1 not set — stream disabled for all tokens")
 
     gateways    = []
     first_token = None  # for custom status (token 1 only)
@@ -1182,11 +1181,13 @@ def main():
             continue
 
         # per-token config
-        rpc_type  = int(get_per_token(config, "rpc_type", idx) or "2")
-        rpc_name  = get_per_token(config, "rpc_name", idx) or "Nova"
-        auto_voice = get_per_token(config, "auto_join_voice", idx).lower() == "true"
-        guild_id   = get_per_token(config, "guild_id", idx)
-        voice_ch   = get_per_token(config, "voice_channel_id", idx)
+        rpc_type      = int(get_per_token(config, "rpc_type", idx) or "2")
+        rpc_name      = get_per_token(config, "rpc_name", idx) or "Nova"
+        auto_voice    = get_per_token(config, "auto_join_voice", idx).lower() == "true"
+        guild_id      = get_per_token(config, "guild_id", idx)
+        voice_ch      = get_per_token(config, "voice_channel_id", idx)
+        token_stream  = get_per_token(config, "stream",   idx).lower() == "true"
+        token_fakelive= get_per_token(config, "fakelive", idx).lower() == "true"
         # env override per token: GUILD_ID_1, VOICE_CHANNEL_ID_1 etc.
         env_suffix = "" if idx == 1 else f"_{idx}"
         guild_id   = os.environ.get(f"GUILD_ID{env_suffix}", "").strip() or guild_id
@@ -1194,13 +1195,13 @@ def main():
 
         # preload assets per token — image_url, image_url_2, image_url_3
         cur_cache = {}
-        if stream_enabled and sc:
+        if token_stream and sc:
             ti_str = "" if idx == 1 else f"_{idx}"
             image_url = sc.get(f"image_url{ti_str}", "") or sc.get("image_url", "")
             cur_cache = preload_assets(token, app_id, image_url)
 
         activity = None
-        if stream_enabled and sc:
+        if token_stream and sc:
             activity = build_activity_from_slot(
                 sc, 1, app_id, cur_cache, start_time, rpc_type, rpc_name, token_index=idx
             )
@@ -1210,15 +1211,15 @@ def main():
             user_id=user_id,
             account_name=account_name,
             activity=activity,
-            stream_config=sc if stream_enabled else None,
-            app_id=app_id if stream_enabled else None,
-            auto_change_stream=auto_change_stream if stream_enabled else False,
+            stream_config=sc if token_stream else None,
+            app_id=app_id if token_stream else None,
+            auto_change_stream=auto_change_stream if token_stream else False,
             asset_cache=cur_cache,
             start_time=start_time,
             auto_join_voice=auto_voice,
             guild_id=guild_id,
             voice_channel_id=voice_ch,
-            fakelive=fakelive,
+            fakelive=token_fakelive,
             rpc_type=rpc_type,
             rpc_name=rpc_name,
             token_index=idx,
@@ -1226,10 +1227,10 @@ def main():
         gw.start()
         gateways.append(gw)
 
-        print(f"[*] Connected | {account_name} | rpc_name={rpc_name} | rpc_type={rpc_type} | start_time={start_time}")
+        print(f"[*] Connected | {account_name} | rpc_name={rpc_name} | rpc_type={rpc_type} | stream={token_stream} | fakelive={token_fakelive} | start_time={start_time}")
         if auto_voice:
             print(f"[*] [{account_name}] Auto join voice: {voice_ch}")
-        if fakelive:
+        if token_fakelive:
             print(f"[*] [{account_name}] Fake live enabled")
 
         if idx == 1:
