@@ -5,7 +5,9 @@ token_3=MTU0OTAxNzkzODA5NzM0NDUyMg.GdULso.ZtdQy7PlhTGLGrNpTVqeGBShdnVzMGdbT0YOcM
 application_id=1546092498063986698
 autochangecustomstatus=false
 autochangestream=false
-stream=false
+stream=false        # token 1 bật RPC
+stream_2=true     # token 2 tắt RPC
+stream_3=true      # token 3 bật RPC
 auto_join_voice=true
 guild_id=1531976359008796856
 voice_channel_id=1545504582476628089
@@ -17,7 +19,9 @@ voice_channel_id_2=1545504582476628089
 auto_join_voice_3=true
 guild_id_3=1531976359008796856
 voice_channel_id_3=1537555898577195281
-fakelive=true
+fakelive=true      # token 1 fake live voice
+fakelive_2=true   # token 2 không fake live
+fakelive_3=true    # token 3 fake live voice
 
 # elapsed, now, today, 1y, 3y, 30d, 180d
 start_time=now
