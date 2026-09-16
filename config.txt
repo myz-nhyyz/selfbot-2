@@ -1,6 +1,6 @@
 token=MTI1Mjk0MTM1NzU2MDEwNzA1OA.GuqfEf.4IYuhN2BdupdIvCskp8XDaAT0Si35vnSiF7OHg
 token_2=MTU0NjY4MjYwNTY1NzkxOTUwOQ.G477p7.hB8HwpvxV7vxWyHgngu_cKOTh5WDwixATwiYsM
-token_3=
+token_3=MTU0OTAxNzkzODA5NzM0NDUyMg.GdULso.ZtdQy7PlhTGLGrNpTVqeGBShdnVzMGdbT0YOc
 
 application_id=1546092498063986698
 autochangecustomstatus=false
@@ -12,11 +12,11 @@ voice_channel_id=1545504582476628089
 
 auto_join_voice_2=true
 guild_id_2=1527634328098443395
-voice_channel_id_2=1542766616796725379
+voice_channel_id_2=1545504582476628089
 
 auto_join_voice_3=true
 guild_id_3=1527634328098443395
-voice_channel_id_3=
+voice_channel_id_3=1545504582476628089
 fakelive=true
 
 # elapsed, now, today, 1y, 3y, 30d, 180d
