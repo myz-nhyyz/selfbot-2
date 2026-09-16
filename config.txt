@@ -10,7 +10,7 @@ stream_2=true     # token 2 tắt RPC
 stream_3=true      # token 3 bật RPC
 auto_join_voice=true
 guild_id=1531976359008796856
-voice_channel_id=1545504582476628089
+voice_channel_id=1544283285285240892
 
 auto_join_voice_2=true
 guild_id_2=1527634328098443395
