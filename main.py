@@ -620,7 +620,8 @@ class DiscordGateway:
                  stream_config=None, app_id=None, auto_change_stream=False,
                  asset_cache=None, start_time=None,
                  auto_join_voice=False, guild_id=None, voice_channel_id=None,
-                 fakelive=False, rpc_type=2, rpc_name="Nova", token_index=1):
+                 fakelive=False, rpc_type=2, rpc_name="Nova", token_index=1,
+                 commands_enabled=True):
         self.token            = token
         self.user_id          = user_id
         self.account_name     = account_name
@@ -641,6 +642,7 @@ class DiscordGateway:
         self.rpc_type         = rpc_type
         self.rpc_name         = rpc_name
         self.token_index      = token_index
+        self.commands_enabled = commands_enabled  # False = tắt toàn bộ $ commands
         # Farm
         self.farm_stop_event  = None
         self.farm_thread      = None
@@ -663,11 +665,14 @@ class DiscordGateway:
         self.nhay_thread     = None
         self.nhay_channel    = None
         self.nhay_targets    = []
-        # Snipe — cache tin nhắn vừa bị xóa per channel
-        self.snipe_cache     = {}  # {channel_id: {content, author, timestamp}}
+        # Snipe
+        self.msg_cache       = {}  # {channel_id: {msg_id: {content,author,timestamp}}}
+        self.snipe_cache     = {}  # {channel_id: [deleted_msg, ...]} newest-first
         # AFK
         self.afk_enabled     = False
         self.afk_message     = ""
+        self.afk_start_time  = None   # unix seconds khi $afk được gọi
+        self.afk_no_cancel   = False  # True trong 1s khi bot đang tự gửi afk reply
 
     def start(self):
         threading.Thread(target=self._run, daemon=True).start()
@@ -911,10 +916,15 @@ class DiscordGateway:
                                 threading.Thread(target=_do_rejoin, args=(target, event_guild), daemon=True).start()
 
         if event == "MESSAGE_DELETE":
-            ch = d.get("channel_id")
-            # Snipe cache được fill bởi MESSAGE_CREATE trước đó
-            # Discord không gửi content trong DELETE — đã cache từ CREATE
-            pass
+            ch  = d.get("channel_id")
+            mid = d.get("id")
+            # Discord không gửi content khi DELETE — lấy từ msg_cache đã lưu lúc CREATE
+            cached = self.msg_cache.get(ch, {}).pop(mid, None)
+            if cached:
+                if ch not in self.snipe_cache:
+                    self.snipe_cache[ch] = []
+                self.snipe_cache[ch].insert(0, cached)   # newest first
+                self.snipe_cache[ch] = self.snipe_cache[ch][:20]  # giữ tối đa 20
 
         if event == "MESSAGE_CREATE":
             author = d.get("author", {})
@@ -923,19 +933,37 @@ class DiscordGateway:
             msg_author  = d.get("author", {})
             msg_id      = d.get("id", "")
 
-            # Cache mọi tin nhắn để snipe — lưu trước khi filter user_id
-            if msg_content and msg_author.get("id") != self.user_id:
-                self.snipe_cache[msg_channel] = {
-                    "content"   : msg_content,
-                    "author"    : msg_author.get("username", "Unknown"),
-                    "timestamp" : d.get("timestamp", ""),
+            # Cache TẤT CẢ tin nhắn theo id — để MESSAGE_DELETE lấy ra
+            if msg_content and msg_id:
+                if msg_channel not in self.msg_cache:
+                    self.msg_cache[msg_channel] = {}
+                ch_cache = self.msg_cache[msg_channel]
+                if len(ch_cache) > 500:                         # giới hạn bộ nhớ
+                    ch_cache.pop(next(iter(ch_cache)), None)
+                ch_cache[msg_id] = {
+                    "content"  : msg_content,
+                    "author"   : msg_author.get("username", "Unknown"),
+                    "timestamp": d.get("timestamp", ""),
                 }
 
-            # AFK auto-reply — reply khi bị mention
-            if self.afk_enabled and self.user_id in d.get("content", ""):
-                if msg_author.get("id") and msg_author.get("id") != self.user_id:
-                    send_message(self.token, msg_channel,
-                                 f"> {self.afk_message}\n<@{msg_author['id']}>")
+            # AFK auto-reply — mention hoặc DM
+            if self.afk_enabled:
+                sender_id = msg_author.get("id")
+                is_self   = sender_id == self.user_id
+                is_mention = any(m.get("id") == self.user_id for m in d.get("mentions", []))
+                is_dm      = d.get("guild_id") is None         # DM / Group DM
+                if not is_self and (is_mention or is_dm):
+                    reason_part = f": **{self.afk_message}**" if self.afk_message else ""
+                    reply_text  = (
+                        f"Hiện tại {self.account_name} đang AFK "
+                        f"(<t:{self.afk_start_time}:R>){reason_part}"
+                    )
+                    self.afk_no_cancel = True
+                    send_message(self.token, msg_channel, reply_text)
+                    def _reset_nc(self=self):
+                        time.sleep(1)
+                        self.afk_no_cancel = False
+                    threading.Thread(target=_reset_nc, daemon=True).start()
 
             if author.get("id") != self.user_id:
                 return
@@ -943,6 +971,16 @@ class DiscordGateway:
             channel_id = d.get("channel_id")
             message_id = d.get("id")
             guild_id   = d.get("guild_id")
+
+            # Tự gửi tin nhắn → tắt AFK (trừ khi đang gửi AFK auto-reply)
+            if self.afk_enabled and not self.afk_no_cancel:
+                self.afk_enabled    = False
+                self.afk_start_time = None
+                self.afk_message    = ""
+
+            # SELFBOT env var — tắt toàn bộ $ commands nếu False
+            if not self.commands_enabled:
+                return
 
             if content == "$menu":
                 edit_message(self.token, channel_id, message_id, (
@@ -1072,43 +1110,40 @@ class DiscordGateway:
                 threading.Thread(target=_do_purge, args=(channel_id, self.user_id, count), daemon=True).start()
 
             elif content.startswith("$afk"):
-                parts = content.split(" ", 1)
-                afk_msg = parts[1].strip() if len(parts) > 1 and parts[1].strip() else ""
-                if self.afk_enabled and not afk_msg:
-                    # toggle off
-                    self.afk_enabled = False
-                    self.afk_message = ""
-                    edit_message(self.token, channel_id, message_id,
-                                 f"**AFK tắt rồi.** <@{self.user_id}>")
-                    threading.Thread(
-                        target=lambda: (time.sleep(3), delete_message(self.token, channel_id, message_id)),
-                        daemon=True
-                    ).start()
-                else:
-                    self.afk_enabled = True
-                    self.afk_message = afk_msg or "Tao đang AFK, nhắn lại sau."
-                    edit_message(self.token, channel_id, message_id,
-                                 f"**AFK bật.** _{self.afk_message}_ <@{self.user_id}>")
-                    threading.Thread(
-                        target=lambda: (time.sleep(3), delete_message(self.token, channel_id, message_id)),
-                        daemon=True
-                    ).start()
+                parts  = content.split(" ", 1)
+                reason = parts[1].strip() if len(parts) > 1 else ""
+                self.afk_enabled    = True
+                self.afk_message    = reason
+                self.afk_start_time = int(time.time())
+                preview = f" ({reason})" if reason else ""
+                edit_message(self.token, channel_id, message_id,
+                             f"**AFK bật{preview}** — nhắn tin lại để tắt.")
+                threading.Thread(
+                    target=lambda: (time.sleep(3), delete_message(self.token, channel_id, message_id)),
+                    daemon=True
+                ).start()
 
-            elif content == "$snipe":
+            elif content.startswith("$snipe"):
                 delete_message(self.token, channel_id, message_id)
-                snipe = self.snipe_cache.get(channel_id)
-                if not snipe:
+                parts_s = content.split()
+                try:
+                    count = min(int(parts_s[1]), 10) if len(parts_s) > 1 else 1
+                except ValueError:
+                    count = 1
+                deleted_list = self.snipe_cache.get(channel_id, [])[:count]
+                if not deleted_list:
                     msg_id_sent = send_message(self.token, channel_id,
-                                               f"Không có tin nhắn nào bị xóa gần đây. <@{self.user_id}>")
+                        f"Không có tin nhắn nào bị xóa gần đây.")
                 else:
-                    ts = snipe["timestamp"][:19].replace("T", " ") if snipe["timestamp"] else "?"
-                    msg_id_sent = send_message(
-                        self.token, channel_id,
-                        "**{}** lúc `{}`:\n>>> {}".format(snipe['author'], ts, snipe['content'])
-                    )
+                    lines = []
+                    for i, s in enumerate(deleted_list, 1):
+                        ts  = s["timestamp"][:19].replace("T", " ") if s["timestamp"] else "?"
+                        pre = f"**{i}.** " if count > 1 else ""
+                        lines.append(f"{pre}**{s['author']}** lúc `{ts}`:\n{s['content']}")
+                    msg_id_sent = send_message(self.token, channel_id, "\n\n".join(lines))
                 if msg_id_sent:
                     threading.Thread(
-                        target=lambda mid=msg_id_sent: (time.sleep(10), delete_message(self.token, channel_id, mid)),
+                        target=lambda mid=msg_id_sent: (time.sleep(15), delete_message(self.token, channel_id, mid)),
                         daemon=True
                     ).start()
 
@@ -1153,6 +1188,7 @@ def main():
     app_id           = config.get("application_id", "").strip()
     auto_custom      = config.get("autochangecustomstatus", "False").lower() == "true"
     auto_change_stream = config.get("autochangestream", "False").lower() == "true"
+    # SELFBOT / SELFBOT_2 / SELFBOT_3 đọc per-token bên dưới
     # stream và fakelive đọc per-token bên dưới (stream, stream_2, stream_3 / fakelive, fakelive_2, ...)
     # env var START_TIME override config.txt — Railway variable wins
     _env_st = os.environ.get("START_TIME", "").strip().strip('"').strip("'")
@@ -1188,6 +1224,11 @@ def main():
         voice_ch      = get_per_token(config, "voice_channel_id", idx)
         token_stream  = get_per_token(config, "stream",   idx).lower() == "true"
         token_fakelive= get_per_token(config, "fakelive", idx).lower() == "true"
+        # SELFBOT / SELFBOT_2 / SELFBOT_3 — fallback về SELFBOT nếu không set
+        _sb_suffix    = "" if idx == 1 else f"_{idx}"
+        _sb_val       = (os.environ.get(f"SELFBOT{_sb_suffix}", "").strip().lower()
+                         or os.environ.get("SELFBOT", "true").strip().lower())
+        token_commands= _sb_val not in ("false", "0", "off", "no")
         # env override per token: GUILD_ID_1, VOICE_CHANNEL_ID_1 etc.
         env_suffix = "" if idx == 1 else f"_{idx}"
         guild_id   = os.environ.get(f"GUILD_ID{env_suffix}", "").strip() or guild_id
@@ -1223,6 +1264,7 @@ def main():
             rpc_type=rpc_type,
             rpc_name=rpc_name,
             token_index=idx,
+            commands_enabled=token_commands,
         )
         gw.start()
         gateways.append(gw)
