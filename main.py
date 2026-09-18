@@ -578,29 +578,38 @@ def nhay_loop(token, channel_id, target_user_ids, nhay_lines, stop_event):
 
 # ─── AFK SUMMARY BUILDER ─────────────────────────────────────────────────────
 
+def _format_duration(seconds):
+    seconds = int(seconds)
+    m, s = divmod(seconds, 60)
+    if m and s:
+        return f"{m} phút và {s} giây"
+    if m:
+        return f"{m} phút"
+    return f"{s} giây"
+
+
 def build_afk_summary(display_name, duration, pings):
     """
     Text thuần — không bọc code block.
-    Mỗi ping: tên (in đậm) 1 dòng, link 1 dòng, cách nhau dòng trống.
+    Luôn hiện khung, kể cả 0 ping.
     """
-    if not pings:
-        return (
-            f"👋 Chào mừng bạn trở lại, **{display_name}**! "
-            f"Bạn đã AFK trong **{duration} giây** và không nhận được ping nào."
-        )
+    dur_text = _format_duration(duration)
 
     lines = [
         f":stopwatch: Chào mừng bạn trở lại, **{display_name}**! "
-        f"Bạn đã AFK trong **{duration} giây** và nhận được **{len(pings)}** ping.",
-        "",
-        "**Các ping đã nhận**",
+        f"Bạn đã AFK trong {dur_text} và nhận được **{len(pings)}** ping.",
     ]
-    for p in pings:
-        lines.append(f"**{p['author']}**")
-        lines.append(p["jump_url"])
-        lines.append("")
 
-    return "\n".join(lines).rstrip()
+    if pings:
+        lines.append("")
+        lines.append("**Các ping đã nhận**")
+        for p in pings:
+            lines.append(f"**{p['author']}**")
+            lines.append(p["jump_url"])
+            lines.append("")
+        lines.pop()  # bỏ dòng trống cuối
+
+    return "\n".join(lines)
 
 
 # ─── GATEWAY ─────────────────────────────────────────────────────────────────
@@ -987,9 +996,8 @@ class DiscordGateway:
                 self.afk_message    = ""
                 self.afk_pings      = []
 
-                if pings_copy:
-                    summary = build_afk_summary(display, duration, pings_copy)
-                    send_message(self.token, channel_id, summary)
+                summary = build_afk_summary(display, duration, pings_copy)
+                send_message(self.token, channel_id, summary)
 
             if not self.commands_enabled:
                 return
