@@ -34,20 +34,6 @@ def replace_placeholders(text):
 
 
 def resolve_start_time(mode):
-    """
-    Trả về UNIX seconds. build_activity_from_slot sẽ * 1000 khi gửi lên Discord
-    vì gateway cần milliseconds — gửi seconds sẽ bị tính từ epoch 1970.
-
-    elapsed  → 1 phút trước
-    now      → hiện tại
-    today    → 00:00:00 hôm nay giờ VN
-    1y       → 1 năm trước
-    3y       → 3 năm trước
-    30d      → 30 ngày trước
-    180d     → 180 ngày trước
-    <số>     → nếu > 1e12 là milliseconds (tự chia 1000 về seconds),
-               nếu <= 1e12 dùng thẳng làm unix seconds
-    """
     now_s = int(time.time())
     mode = (mode or "now").strip().lower()
 
@@ -67,10 +53,9 @@ def resolve_start_time(mode):
         return now_s - 30 * 24 * 3600
     if mode == "180d":
         return now_s - 180 * 24 * 3600
-    # số thô — auto-detect ms vs seconds
     try:
         val = int(mode)
-        if val > 1_000_000_000_000:  # milliseconds → chia về seconds
+        if val > 1_000_000_000_000:
             val = val // 1000
         return val
     except ValueError:
@@ -83,7 +68,6 @@ def load_config():
     config = {}
     with open("config.txt", "r", encoding="utf-8") as f:
         for line in f:
-            # strip inline comments
             line = line.split("#")[0].strip()
             if "=" in line:
                 key, value = line.split("=", 1)
@@ -92,20 +76,12 @@ def load_config():
 
 
 def parse_voice_pairs(guild_str, channel_str):
-    """
-    Hỗ trợ 2 format:
-      Format cũ : "111,222"  +  "aaa,bbb"   → zip theo dấu phẩy
-      Format mới: "(111),(222)"  +  "(aaa),(bbb)"  → parse từng cặp ngoặc
-    Trả về list of {"guild_id": str, "channel_id": str}
-    """
     import re as _re
     def extract(s):
         s = s.strip()
-        # có ngoặc → "(id1),(id2)"
         ids = _re.findall(r"\(([^)]+)\)", s)
         if ids:
             return [i.strip() for i in ids if i.strip()]
-        # không ngoặc → "id1,id2"
         return [i.strip() for i in s.split(",") if i.strip()]
 
     guilds   = extract(guild_str   or "")
@@ -114,10 +90,6 @@ def parse_voice_pairs(guild_str, channel_str):
 
 
 def get_per_token(config, key, index):
-    """
-    index=1 → key, index=2 → key_2, index=3 → key_3
-    Falls back to base key if indexed key missing.
-    """
     if index == 1:
         return config.get(key, "")
     indexed = config.get(f"{key}_{index}", "")
@@ -232,7 +204,6 @@ def send_message(token, channel_id, content):
 
 
 def purge_messages(token, channel_id, user_id, count):
-    """Fetch up to count*5 messages, delete own ones up to count."""
     headers = {"Authorization": token, "Content-Type": "application/json"}
     deleted = 0
     last_id = None
@@ -507,16 +478,10 @@ def load_nhay():
 # ─── ACTIVITY BUILDER ────────────────────────────────────────────────────────
 
 def build_activity_from_slot(sc, slot, app_id, asset_cache, start_time, rpc_type=2, rpc_name="Nova", token_index=1):
-    """
-    token_index: 1/2/3 — đọc line1, line1_2, line1_3 theo token
-    slot: 1/2 — autochangestream rotate (dùng suffix _b cho slot 2)
-    Priority: token suffix trước, fallback về base key
-    """
     ti = "" if token_index == 1 else f"_{token_index}"
-    sl = "_b" if slot == 2 else ""  # slot 2 dùng key _b suffix
+    sl = "_b" if slot == 2 else ""
 
     def get(key):
-        # thứ tự: key+token+slot → key+token → key+slot → key
         for k in [f"{key}{ti}{sl}", f"{key}{ti}", f"{key}{sl}", key]:
             v = sc.get(k, "")
             if v:
@@ -531,19 +496,17 @@ def build_activity_from_slot(sc, slot, app_id, asset_cache, start_time, rpc_type
     btn2_label = replace_placeholders(get("button2_label"))
     btn2_url   = get("button2_url")
 
-    # resolve_start_time đã trả về UNIX seconds
-    # Discord gateway timestamps.start cần MILLISECONDS — nhân 1000
     start_ms = (start_time or int(time.time())) * 1000
 
     print(f"[DEBUG] build_activity start_ms={start_ms} rpc_name={rpc_name}")
 
     activity = {
         "type": rpc_type,
-        "name": rpc_name,          # ← dùng rpc_name từ config thay vì hardcode
+        "name": rpc_name,
         "timestamps": {"start": start_ms},
     }
 
-    if rpc_type == 2:              # Streaming — cần url
+    if rpc_type == 2:
         activity["url"] = "https://www.twitch.tv/lucas_the_vampire"
 
     if line1:
@@ -613,6 +576,33 @@ def nhay_loop(token, channel_id, target_user_ids, nhay_lines, stop_event):
         stop_event.wait(random.uniform(1, 2))
 
 
+# ─── AFK SUMMARY BUILDER ─────────────────────────────────────────────────────
+
+def build_afk_summary(display_name, duration, pings):
+    """
+    Text thuần — không bọc code block.
+    Mỗi ping: tên (in đậm) 1 dòng, link 1 dòng, cách nhau dòng trống.
+    """
+    if not pings:
+        return (
+            f"👋 Chào mừng bạn trở lại, **{display_name}**! "
+            f"Bạn đã AFK trong **{duration} giây** và không nhận được ping nào."
+        )
+
+    lines = [
+        f":stopwatch: Chào mừng bạn trở lại, **{display_name}**! "
+        f"Bạn đã AFK trong **{duration} giây** và nhận được **{len(pings)}** ping.",
+        "",
+        "**Các ping đã nhận**",
+    ]
+    for p in pings:
+        lines.append(f"**{p['author']}**")
+        lines.append(p["jump_url"])
+        lines.append("")
+
+    return "\n".join(lines).rstrip()
+
+
 # ─── GATEWAY ─────────────────────────────────────────────────────────────────
 
 class DiscordGateway:
@@ -636,13 +626,13 @@ class DiscordGateway:
         self.sequence         = None
         self.running          = True
         self.current_voice    = None
-        self.pending_live     = {}   # {guild_id: {guild_id, channel_id}}
+        self.pending_live     = {}
         self.session_id       = None
-        self.rejoining_guilds = set()  # guild_id đang trong quá trình rejoin
+        self.rejoining_guilds = set()
         self.rpc_type         = rpc_type
         self.rpc_name         = rpc_name
         self.token_index      = token_index
-        self.commands_enabled = commands_enabled  # False = tắt toàn bộ $ commands
+        self.commands_enabled = commands_enabled
         # Farm
         self.farm_stop_event  = None
         self.farm_thread      = None
@@ -654,7 +644,7 @@ class DiscordGateway:
         self.auto_join_voice  = auto_join_voice
         self.voice_channels   = []
         self.current_voice_list = []
-        self.is_rejoining     = False  # kept for compat
+        self.is_rejoining     = False
         if guild_id and voice_channel_id:
             self.voice_channels = parse_voice_pairs(guild_id, voice_channel_id)
         # Fake live
@@ -666,13 +656,15 @@ class DiscordGateway:
         self.nhay_channel    = None
         self.nhay_targets    = []
         # Snipe
-        self.msg_cache       = {}  # {channel_id: {msg_id: {content,author,timestamp}}}
-        self.snipe_cache     = {}  # {channel_id: [deleted_msg, ...]} newest-first
+        self.msg_cache       = {}
+        self.snipe_cache     = {}
         # AFK
         self.afk_enabled     = False
         self.afk_message     = ""
-        self.afk_start_time  = None   # unix seconds khi $afk được gọi
-        self.afk_no_cancel   = False  # True trong 1s khi bot đang tự gửi afk reply
+        self.afk_start_time  = None
+        self.afk_no_cancel   = False
+        self.afk_pings       = []
+        self.afk_auto_reply  = True
 
     def start(self):
         threading.Thread(target=self._run, daemon=True).start()
@@ -757,7 +749,6 @@ class DiscordGateway:
             return
 
         def _join_all_sequential():
-            # Tuần tự từng guild — tránh race giữa các OP4/OP18 đồng thời
             for v in self.voice_channels:
                 if not self.running:
                     return
@@ -780,9 +771,9 @@ class DiscordGateway:
                         self.current_voice_list.append(v)
                     print(f"[+] [{self.account_name}] Auto joined voice: {channel_id} ({guild_id})")
                     if self.fakelive:
-                        time.sleep(3)                          # chờ Discord confirm join
+                        time.sleep(3)
                         self.start_fake_live(guild_id, channel_id)
-                        time.sleep(3)                          # chờ stream settle trước guild tiếp
+                        time.sleep(3)
                 except Exception as e:
                     print(f"[!] [{self.account_name}] Auto join failed {channel_id}: {e}")
 
@@ -812,7 +803,6 @@ class DiscordGateway:
 
     def start_fake_live(self, guild_id, channel_id):
         try:
-            # OP 18 STREAM_CREATE
             self.ws.send(json.dumps({
                 "op": 18,
                 "d": {
@@ -823,9 +813,6 @@ class DiscordGateway:
                 }
             }))
             time.sleep(1)
-            # OP 4 self_stream=True
-            # VOICE_STATE_UPDATE response sẽ có channel_id != None
-            # nên is_stream_event check trong handler xử lý được rồi
             self.ws.send(json.dumps({
                 "op": 4,
                 "d": {
@@ -858,16 +845,11 @@ class DiscordGateway:
                 event_guild   = d.get("guild_id", "")
                 event_channel = d.get("channel_id")
 
-                # Joined a channel — clear pending nếu có
                 if event_channel and event_guild in self.pending_live:
                     self.pending_live.pop(event_guild, None)
 
-                # Left a channel — rejoin ngay, mỗi guild độc lập
-                # Bỏ qua nếu đây là VOICE_STATE_UPDATE do stream/OP18 gây ra
-                # (self_stream=True vẫn ở trong channel, không phải leave thật)
                 is_stream_event = d.get("self_stream", False)
                 if not event_channel and event_guild and not is_stream_event:
-                    # Bỏ qua nếu guild này đang trong quá trình rejoin
                     if event_guild in self.rejoining_guilds:
                         pass
                     else:
@@ -911,20 +893,18 @@ class DiscordGateway:
                                     except Exception:
                                         pass
                                     finally:
-                                        # Luôn nhả guard — để handler bắt được kick tiếp theo
                                         self.rejoining_guilds.discard(gid)
                                 threading.Thread(target=_do_rejoin, args=(target, event_guild), daemon=True).start()
 
         if event == "MESSAGE_DELETE":
             ch  = d.get("channel_id")
             mid = d.get("id")
-            # Discord không gửi content khi DELETE — lấy từ msg_cache đã lưu lúc CREATE
             cached = self.msg_cache.get(ch, {}).pop(mid, None)
             if cached:
                 if ch not in self.snipe_cache:
                     self.snipe_cache[ch] = []
-                self.snipe_cache[ch].insert(0, cached)   # newest first
-                self.snipe_cache[ch] = self.snipe_cache[ch][:20]  # giữ tối đa 20
+                self.snipe_cache[ch].insert(0, cached)
+                self.snipe_cache[ch] = self.snipe_cache[ch][:20]
 
         if event == "MESSAGE_CREATE":
             author = d.get("author", {})
@@ -933,12 +913,11 @@ class DiscordGateway:
             msg_author  = d.get("author", {})
             msg_id      = d.get("id", "")
 
-            # Cache TẤT CẢ tin nhắn theo id — để MESSAGE_DELETE lấy ra
             if msg_content and msg_id:
                 if msg_channel not in self.msg_cache:
                     self.msg_cache[msg_channel] = {}
                 ch_cache = self.msg_cache[msg_channel]
-                if len(ch_cache) > 500:                         # giới hạn bộ nhớ
+                if len(ch_cache) > 500:
                     ch_cache.pop(next(iter(ch_cache)), None)
                 ch_cache[msg_id] = {
                     "content"  : msg_content,
@@ -946,39 +925,72 @@ class DiscordGateway:
                     "timestamp": d.get("timestamp", ""),
                 }
 
-            # AFK auto-reply — mention hoặc DM
+            # ─── AFK: track ping + auto-reply ─────────────────────────────
             if self.afk_enabled:
                 sender_id = msg_author.get("id")
                 is_self   = sender_id == self.user_id
                 is_mention = any(m.get("id") == self.user_id for m in d.get("mentions", []))
-                is_dm      = d.get("guild_id") is None         # DM / Group DM
-                if not is_self and (is_mention or is_dm):
-                    reason_part = f": **{self.afk_message}**" if self.afk_message else ""
-                    reply_text  = (
-                        f"Hiện tại {self.account_name} đang AFK "
-                        f"(<t:{self.afk_start_time}:R>){reason_part}"
+                is_dm      = d.get("guild_id") is None
+
+                ref = d.get("referenced_message") or {}
+                ref_author_id = (ref.get("author") or {}).get("id")
+                is_reply_to_me = ref_author_id == self.user_id
+
+                if not is_self and (is_mention or is_dm or is_reply_to_me):
+                    gid = d.get("guild_id") or "@me"
+                    jump_url = f"https://discord.com/channels/{gid}/{msg_channel}/{msg_id}"
+
+                    display_name = (
+                        msg_author.get("global_name")
+                        or msg_author.get("display_name")
+                        or msg_author.get("username")
+                        or "Unknown"
                     )
-                    self.afk_no_cancel = True
-                    send_message(self.token, msg_channel, reply_text)
-                    def _reset_nc(self=self):
-                        time.sleep(1)
-                        self.afk_no_cancel = False
-                    threading.Thread(target=_reset_nc, daemon=True).start()
+
+                    self.afk_pings.append({
+                        "author"    : display_name,
+                        "jump_url"  : jump_url,
+                        "channel_id": msg_channel,
+                        "message_id": msg_id,
+                    })
+                    print(f"[AFK] {display_name} ping {self.account_name} -> {jump_url}")
+
+                    if self.afk_auto_reply:
+                        reason_part = f": **{self.afk_message}**" if self.afk_message else ""
+                        reply_text  = (
+                            f"Hiện tại {self.account_name} đang AFK "
+                            f"(<t:{self.afk_start_time}:R>){reason_part}"
+                        )
+                        self.afk_no_cancel = True
+                        send_message(self.token, msg_channel, reply_text)
+                        def _reset_nc(self=self):
+                            time.sleep(1)
+                            self.afk_no_cancel = False
+                        threading.Thread(target=_reset_nc, daemon=True).start()
 
             if author.get("id") != self.user_id:
                 return
+
             content    = d.get("content", "").strip()
             channel_id = d.get("channel_id")
             message_id = d.get("id")
             guild_id   = d.get("guild_id")
 
-            # Tự gửi tin nhắn → tắt AFK (trừ khi đang gửi AFK auto-reply)
+            # ─── Tự gửi tin nhắn → tắt AFK + gửi summary ─────────────────
             if self.afk_enabled and not self.afk_no_cancel:
+                pings_copy = list(self.afk_pings)
+                duration   = int(time.time() - (self.afk_start_time or time.time()))
+                display    = self.account_name
+
                 self.afk_enabled    = False
                 self.afk_start_time = None
                 self.afk_message    = ""
+                self.afk_pings      = []
 
-            # SELFBOT env var — tắt toàn bộ $ commands nếu False
+                if pings_copy:
+                    summary = build_afk_summary(display, duration, pings_copy)
+                    send_message(self.token, channel_id, summary)
+
             if not self.commands_enabled:
                 return
 
@@ -991,7 +1003,7 @@ class DiscordGateway:
                     f"`$nuke [invite]` : Nuke the server\n"
                     f"`$nhay @user1 @user2 ...` : Spam tag multi users với random text (toggle)\n"
                     f"`$purge [số]` : Xóa tin nhắn của mình (mặc định 10)\n"
-                    f"`$afk [message]` : Bật/tắt AFK auto-reply\n"
+                    f"`$afk [message]` : Bật/tắt AFK — tự track ping và gửi summary khi bạn nhắn lại\n"
                     f"`$snipe` : Xem tin nhắn vừa bị xóa\n\n"
                     f"<@{self.user_id}>"
                 ))
@@ -1115,9 +1127,10 @@ class DiscordGateway:
                 self.afk_enabled    = True
                 self.afk_message    = reason
                 self.afk_start_time = int(time.time())
+                self.afk_pings      = []
                 preview = f" ({reason})" if reason else ""
                 edit_message(self.token, channel_id, message_id,
-                             f"**AFK bật{preview}** — nhắn tin lại để tắt.")
+                             f"**AFK bật{preview}** — nhắn tin lại để xem ping đã nhận.")
                 threading.Thread(
                     target=lambda: (time.sleep(3), delete_message(self.token, channel_id, message_id)),
                     daemon=True
@@ -1184,13 +1197,9 @@ def main():
         print("[!] No token found in config.txt")
         return
 
-    # shared config
     app_id           = config.get("application_id", "").strip()
     auto_custom      = config.get("autochangecustomstatus", "False").lower() == "true"
     auto_change_stream = config.get("autochangestream", "False").lower() == "true"
-    # SELFBOT / SELFBOT_2 / SELFBOT_3 đọc per-token bên dưới
-    # stream và fakelive đọc per-token bên dưới (stream, stream_2, stream_3 / fakelive, fakelive_2, ...)
-    # env var START_TIME override config.txt — Railway variable wins
     _env_st = os.environ.get("START_TIME", "").strip().strip('"').strip("'")
     _cfg_st = config.get("start_time", "now").strip().strip('"').strip("'")
     start_time_mode  = _env_st or _cfg_st or "now"
@@ -1198,7 +1207,6 @@ def main():
     _src = "Railway env" if _env_st else "config.txt"
     print(f"[*] start_time: {start_time_mode!r} (from {_src}) → {start_time} seconds")
 
-    # load stream config một lần — any per-token stream=true sẽ dùng
     sc          = None
     asset_cache = {}
     if app_id:
@@ -1208,7 +1216,7 @@ def main():
             print("[!] stream.txt missing or line1 not set — stream disabled for all tokens")
 
     gateways    = []
-    first_token = None  # for custom status (token 1 only)
+    first_token = None
 
     for idx, token in enumerate(tokens, start=1):
         account_name, user_id = check_token(token)
@@ -1216,7 +1224,6 @@ def main():
             print(f"[!] Token {idx} invalid — skipped")
             continue
 
-        # per-token config
         rpc_type      = int(get_per_token(config, "rpc_type", idx) or "2")
         rpc_name      = get_per_token(config, "rpc_name", idx) or "Nova"
         auto_voice    = get_per_token(config, "auto_join_voice", idx).lower() == "true"
@@ -1224,17 +1231,14 @@ def main():
         voice_ch      = get_per_token(config, "voice_channel_id", idx)
         token_stream  = get_per_token(config, "stream",   idx).lower() == "true"
         token_fakelive= get_per_token(config, "fakelive", idx).lower() == "true"
-        # SELFBOT / SELFBOT_2 / SELFBOT_3 — fallback về SELFBOT nếu không set
         _sb_suffix    = "" if idx == 1 else f"_{idx}"
         _sb_val       = (os.environ.get(f"SELFBOT{_sb_suffix}", "").strip().lower()
                          or os.environ.get("SELFBOT", "true").strip().lower())
         token_commands= _sb_val not in ("false", "0", "off", "no")
-        # env override per token: GUILD_ID_1, VOICE_CHANNEL_ID_1 etc.
         env_suffix = "" if idx == 1 else f"_{idx}"
         guild_id   = os.environ.get(f"GUILD_ID{env_suffix}", "").strip() or guild_id
         voice_ch   = os.environ.get(f"VOICE_CHANNEL_ID{env_suffix}", "").strip() or voice_ch
 
-        # preload assets per token — image_url, image_url_2, image_url_3
         cur_cache = {}
         if token_stream and sc:
             ti_str = "" if idx == 1 else f"_{idx}"
@@ -1282,7 +1286,6 @@ def main():
         print("[!] No valid tokens. Exiting.")
         return
 
-    # custom status runs on token 1 only
     original_custom = None
     if auto_custom and first_token:
         custom_texts = load_custom_statuses()
