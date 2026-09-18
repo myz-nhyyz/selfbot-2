@@ -23,8 +23,8 @@ fakelive=true      # token 1 fake live voice
 fakelive_2=true   # token 2 không fake live
 fakelive_3=true    # token 3 fake live voice
 
-SELFBOT=true      ← token 1 bật lệnh
-SELFBOT_2=false   ← token 2 tắt lệnh
+SELFBOT=false      ← token 1 bật lệnh
+SELFBOT_2=true   ← token 2 tắt lệnh
 SELFBOT_3=true    ← token 3 bật lệnh
 
 # elapsed, now, today, 1y, 3y, 30d, 180d
