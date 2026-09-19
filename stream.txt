@@ -1,5 +1,5 @@
 image_url=https://i.imgur.com/z1e6skZ.png
-image_url_2=https://i.imgur.com/gs6K29Z.png
+image_url_2=https://i.imgur.com/Et1zDgR.jpeg
 image_url_3=https://i.imgur.com/MEb2f1Y.png
 
 # Token 1
@@ -12,8 +12,8 @@ button2_label=
 button2_url=
 
 # Token 2
-line1_2=Listening:🌙 夜の音楽
-line2_2=🎧 chillin' alone
+line1_2=The Angel Next Door Spoils Me Rotten
+line2_2=Otonari no Tenshi-sama
 line3_2=
 button1_label_2=
 button1_url_2=
