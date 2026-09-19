@@ -32,7 +32,7 @@ start_time=now
 
 # 0=Playing, 1=Streaming, 2=Listening, 3=Watching, 5=Competing
 rpc_type=2       # token 1
-rpc_type_2=3# token 2
+rpc_type_2=3     # token 2
 rpc_type_3=2     # token  3
 
 rpc_name=
