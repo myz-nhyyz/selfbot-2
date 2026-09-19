@@ -1,6 +1,6 @@
-token=MTI1Mjk0MTM1NzU2MDEwNzA1OA.GoYbbN.q4sb4HQ_BDK2R6y9MS0SVZv6ZHCGrHnnn1fCRc
-token_2=MTUxMzAwNzMzOTMyOTAyODE1Nw.GW46Qp.EJGWxMMNrOekantr_MNrWHEpWZhlxI7OXfef4I
-token_3=MTMyMjMzMzgzODc3NjczMzc0OA.GnRBJA.zlczr_UXo3gjlnhVaDtkg0MdOoDWFogmoor95Q
+token=MTI1Mjk0MTM1NzU2MDEwNzA1OA.GHLDmc.yVHq4tdzPzJ1bn91zH5VzvayCYcsW7lTMH-AYc
+token_2=
+token_3=
 
 application_id=1546092498063986698
 autochangecustomstatus=false
@@ -8,7 +8,7 @@ autochangestream=false
 stream=false        # token 1 bật RPC
 stream_2=true     # token 2 tắt RPC
 stream_3=true      # token 3 bật RPC
-auto_join_voice=true
+auto_join_voice=false
 guild_id=1544280538129633282
 voice_channel_id=1544283285285240892
 
