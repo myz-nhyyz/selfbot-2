@@ -514,7 +514,7 @@ def build_activity_from_slot(sc, slot, app_id, asset_cache, start_time, rpc_type
     if line2:
         activity["state"] = line2
 
-    asset_text = line3 if line3 else "\u200b"
+    asset_text = line3 if line3 else "​"
     activity["assets"] = {
         "large_image": asset_cache.get("large", ""),
         "large_text": asset_text,
@@ -576,63 +576,58 @@ def nhay_loop(token, channel_id, target_user_ids, nhay_lines, stop_event):
         stop_event.wait(random.uniform(1, 2))
 
 
-# ─── AFK SUMMARY BUILDER ─────────────────────────────────────────────────────
+# ─── AFK HELPERS ─────────────────────────────────────────────────────────────
 
 def _format_duration(seconds):
-    """FIX 1: thêm xử lý giờ — 3661s → '1 giờ 1 phút và 1 giây'"""
     seconds = int(seconds)
-    h, rem  = divmod(seconds, 3600)
-    m, s    = divmod(rem, 60)
-
-    parts = []
-    if h:
-        parts.append(f"{h} giờ")
+    m, s = divmod(seconds, 60)
+    if m and s:
+        return f"{m} phút và {s} giây"
     if m:
-        parts.append(f"{m} phút")
-    if s or not parts:          # luôn hiện giây nếu không có gì khác
-        parts.append(f"{s} giây")
-
-    # Ghép: "1 giờ 30 phút và 5 giây" / "2 phút và 10 giây" / "45 giây"
-    if len(parts) == 1:
-        return parts[0]
-    return " ".join(parts[:-1]) + " và " + parts[-1]
+        return f"{m} phút"
+    return f"{s} giây"
 
 
 def build_afk_summary(display_name, duration, pings):
     """
-    FIX 2: bold duration.
-    FIX 3: 2-column layout — author names ngang, link mỗi cái 1 dòng.
+    Text thuần — không bọc code block.
+    Luôn hiện khung, kể cả 0 ping.
     """
     dur_text = _format_duration(duration)
 
     lines = [
         f":stopwatch: Chào mừng bạn trở lại, **{display_name}**! "
-        f"Bạn đã AFK trong **{dur_text}** và nhận được **{len(pings)}** ping.",
+        f"Bạn đã AFK trong {dur_text} và nhận được **{len(pings)}** ping.",
     ]
 
     if pings:
         lines.append("")
         lines.append("**Các ping đã nhận**")
-
-        SEP = "\u3000\u3000\u3000\u3000"   # ideographic spaces — ngang hơn space thường
-
-        # Nhóm từng 2 ping một hàng
-        for i in range(0, len(pings), 2):
-            pair = pings[i:i+2]
-
-            # Hàng tên — ngang
-            lines.append(SEP.join(f"**{p['author']}**" for p in pair))
-
-            # Mỗi link một dòng ngay dưới tên (link dài → không đặt ngang được)
-            for p in pair:
-                lines.append(p["jump_url"])
-
-            lines.append("")   # khoảng cách giữa các nhóm
-
-        if lines[-1] == "":
-            lines.pop()        # bỏ dòng trống cuối
+        for p in pings:
+            lines.append(f"**{p['author']}**")
+            lines.append(p["jump_url"])
+            lines.append("")
+        lines.pop()  # bỏ dòng trống cuối
 
     return "\n".join(lines)
+
+
+def is_user_mention_of(mentions, my_id):
+    """
+    Chỉ trả True khi my_id xuất hiện trong mentions[] dưới dạng USER mention.
+    Discord gateway phân biệt rõ:
+      - mentions[]        : user mention (có username)
+      - mention_roles[]   : role mention (chỉ id, không có username)
+      - mention_everyone  : bool, cho @everyone / @here
+    Check thêm field 'username' để loại bỏ mọi khả năng role id lọt vào.
+    """
+    for m in mentions or []:
+        if m.get("id") != my_id:
+            continue
+        # user mention object luôn có 'username'; role/everyone thì không
+        if m.get("username") is not None or m.get("discriminator") is not None:
+            return True
+    return False
 
 
 # ─── GATEWAY ─────────────────────────────────────────────────────────────────
@@ -694,9 +689,10 @@ class DiscordGateway:
         self.afk_enabled     = False
         self.afk_message     = ""
         self.afk_start_time  = None
-        self.afk_no_cancel   = False
         self.afk_pings       = []
         self.afk_auto_reply  = True
+        # message_id của auto-reply AFK gần nhất — để không tự trigger tắt AFK
+        self.afk_auto_reply_msg_id = None
 
     def start(self):
         threading.Thread(target=self._run, daemon=True).start()
@@ -958,17 +954,26 @@ class DiscordGateway:
                 }
 
             # ─── AFK: track ping + auto-reply ─────────────────────────────
+            # CHỈ trigger khi:
+            #   1. user mention trực tiếp (KHÔNG role/everyone/here)
+            #   2. DM riêng
+            #   3. reply vào tin nhắn của mình
             if self.afk_enabled:
                 sender_id = msg_author.get("id")
                 is_self   = sender_id == self.user_id
-                is_mention = any(m.get("id") == self.user_id for m in d.get("mentions", []))
-                is_dm      = d.get("guild_id") is None
 
+                # user mention trực tiếp — dùng helper lọc role/everyone
+                is_user_mention = is_user_mention_of(
+                    d.get("mentions", []), self.user_id
+                )
+                # DM / Group DM — không có guild_id
+                is_dm = d.get("guild_id") is None
+                # reply vào tin nhắn của mình
                 ref = d.get("referenced_message") or {}
                 ref_author_id = (ref.get("author") or {}).get("id")
                 is_reply_to_me = ref_author_id == self.user_id
 
-                if not is_self and (is_mention or is_dm or is_reply_to_me):
+                if not is_self and (is_user_mention or is_dm or is_reply_to_me):
                     gid = d.get("guild_id") or "@me"
                     jump_url = f"https://discord.com/channels/{gid}/{msg_channel}/{msg_id}"
 
@@ -993,12 +998,9 @@ class DiscordGateway:
                             f"Hiện tại {self.account_name} đang AFK "
                             f"(<t:{self.afk_start_time}:R>){reason_part}"
                         )
-                        self.afk_no_cancel = True
-                        send_message(self.token, msg_channel, reply_text)
-                        def _reset_nc(self=self):
-                            time.sleep(1)
-                            self.afk_no_cancel = False
-                        threading.Thread(target=_reset_nc, daemon=True).start()
+                        self.afk_auto_reply_msg_id = send_message(
+                            self.token, msg_channel, reply_text
+                        )
 
             if author.get("id") != self.user_id:
                 return
@@ -1009,19 +1011,24 @@ class DiscordGateway:
             guild_id   = d.get("guild_id")
 
             # ─── Tự gửi tin nhắn → tắt AFK + gửi summary ─────────────────
-            if self.afk_enabled and not self.afk_no_cancel:
+            # Bỏ qua nếu:
+            #   - message này chính là auto-reply AFK vừa gửi
+            #   - message này là lệnh $afk (để đổi reason không bị spam summary)
+            if (self.afk_enabled
+                    and message_id != self.afk_auto_reply_msg_id
+                    and not content.startswith("$afk")):
                 pings_copy = list(self.afk_pings)
                 duration   = int(time.time() - (self.afk_start_time or time.time()))
                 display    = self.account_name
 
-                self.afk_enabled    = False
-                self.afk_start_time = None
-                self.afk_message    = ""
-                self.afk_pings      = []
+                self.afk_enabled           = False
+                self.afk_start_time        = None
+                self.afk_message           = ""
+                self.afk_pings             = []
+                self.afk_auto_reply_msg_id = None
 
-                if pings_copy:     # chỉ gửi summary khi có người ping
-                    summary = build_afk_summary(display, duration, pings_copy)
-                    send_message(self.token, channel_id, summary)
+                summary = build_afk_summary(display, duration, pings_copy)
+                send_message(self.token, channel_id, summary)
 
             if not self.commands_enabled:
                 return
@@ -1035,7 +1042,7 @@ class DiscordGateway:
                     f"`$nuke [invite]` : Nuke the server\n"
                     f"`$nhay @user1 @user2 ...` : Spam tag multi users với random text (toggle)\n"
                     f"`$purge [số]` : Xóa tin nhắn của mình (mặc định 10)\n"
-                    f"`$afk [message]` : Bật AFK — tự track ping và gửi summary khi bạn nhắn lại\n"
+                    f"`$afk [message]` : Bật/tắt AFK — tự track ping và gửi summary khi bạn nhắn lại\n"
                     f"`$snipe` : Xem tin nhắn vừa bị xóa\n\n"
                     f"<@{self.user_id}>"
                 ))
@@ -1160,6 +1167,7 @@ class DiscordGateway:
                 self.afk_message    = reason
                 self.afk_start_time = int(time.time())
                 self.afk_pings      = []
+                self.afk_auto_reply_msg_id = None
                 preview = f" ({reason})" if reason else ""
                 edit_message(self.token, channel_id, message_id,
                              f"**AFK bật{preview}** — nhắn tin lại để xem ping đã nhận.")
@@ -1237,7 +1245,7 @@ def main():
     start_time_mode  = _env_st or _cfg_st or "now"
     start_time       = resolve_start_time(start_time_mode)
     _src = "Railway env" if _env_st else "config.txt"
-    print(f"[*] start_time: {start_time_mode!r} (from {_src}) \u2192 {start_time} seconds")
+    print(f"[*] start_time: {start_time_mode!r} (from {_src}) → {start_time} seconds")
 
     sc          = None
     asset_cache = {}
@@ -1245,7 +1253,7 @@ def main():
         sc = load_stream_config()
         if sc is None or not sc.get("line1"):
             sc = None
-            print("[!] stream.txt missing or line1 not set \u2014 stream disabled for all tokens")
+            print("[!] stream.txt missing or line1 not set — stream disabled for all tokens")
 
     gateways    = []
     first_token = None
@@ -1253,7 +1261,7 @@ def main():
     for idx, token in enumerate(tokens, start=1):
         account_name, user_id = check_token(token)
         if not account_name:
-            print(f"[!] Token {idx} invalid \u2014 skipped")
+            print(f"[!] Token {idx} invalid — skipped")
             continue
 
         rpc_type      = int(get_per_token(config, "rpc_type", idx) or "2")
@@ -1322,7 +1330,7 @@ def main():
     if auto_custom and first_token:
         custom_texts = load_custom_statuses()
         if len(custom_texts) <= 1:
-            print("[!] customstatus.txt needs at least 2 lines \u2014 disabled")
+            print("[!] customstatus.txt needs at least 2 lines — disabled")
             auto_custom = False
         else:
             original_custom = get_current_custom_status(first_token)
