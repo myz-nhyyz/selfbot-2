@@ -1,4 +1,4 @@
-token=MTI1Mjk0MTM1NzU2MDEwNzA1OA.GHLDmc.yVHq4tdzPzJ1bn91zH5VzvayCYcsW7lTMH-AYc
+token=
 token_2=
 token_3=
 
