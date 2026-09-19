@@ -36,8 +36,8 @@ rpc_type_2=2     # token 2
 rpc_type_3=2     # token  3
 
 rpc_name=
-rpc_name_2=
-rpc_name_3=
+rpc_name_2=Viola
+rpc_name_3=Seto
 
 # game preset: roblox, minecraft, valorant, cs2, lol
 game_activity=
