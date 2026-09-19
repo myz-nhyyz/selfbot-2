@@ -514,7 +514,7 @@ def build_activity_from_slot(sc, slot, app_id, asset_cache, start_time, rpc_type
     if line2:
         activity["state"] = line2
 
-    asset_text = line3 if line3 else "​"
+    asset_text = line3 if line3 else "\u200b"
     activity["assets"] = {
         "large_image": asset_cache.get("large", ""),
         "large_text": asset_text,
@@ -579,35 +579,58 @@ def nhay_loop(token, channel_id, target_user_ids, nhay_lines, stop_event):
 # ─── AFK SUMMARY BUILDER ─────────────────────────────────────────────────────
 
 def _format_duration(seconds):
+    """FIX 1: thêm xử lý giờ — 3661s → '1 giờ 1 phút và 1 giây'"""
     seconds = int(seconds)
-    m, s = divmod(seconds, 60)
-    if m and s:
-        return f"{m} phút và {s} giây"
+    h, rem  = divmod(seconds, 3600)
+    m, s    = divmod(rem, 60)
+
+    parts = []
+    if h:
+        parts.append(f"{h} giờ")
     if m:
-        return f"{m} phút"
-    return f"{s} giây"
+        parts.append(f"{m} phút")
+    if s or not parts:          # luôn hiện giây nếu không có gì khác
+        parts.append(f"{s} giây")
+
+    # Ghép: "1 giờ 30 phút và 5 giây" / "2 phút và 10 giây" / "45 giây"
+    if len(parts) == 1:
+        return parts[0]
+    return " ".join(parts[:-1]) + " và " + parts[-1]
 
 
 def build_afk_summary(display_name, duration, pings):
     """
-    Text thuần — không bọc code block.
-    Luôn hiện khung, kể cả 0 ping.
+    FIX 2: bold duration.
+    FIX 3: 2-column layout — author names ngang, link mỗi cái 1 dòng.
     """
     dur_text = _format_duration(duration)
 
     lines = [
         f":stopwatch: Chào mừng bạn trở lại, **{display_name}**! "
-        f"Bạn đã AFK trong {dur_text} và nhận được **{len(pings)}** ping.",
+        f"Bạn đã AFK trong **{dur_text}** và nhận được **{len(pings)}** ping.",
     ]
 
     if pings:
         lines.append("")
         lines.append("**Các ping đã nhận**")
-        for p in pings:
-            lines.append(f"**{p['author']}**")
-            lines.append(p["jump_url"])
-            lines.append("")
-        lines.pop()  # bỏ dòng trống cuối
+
+        SEP = "\u3000\u3000\u3000\u3000"   # ideographic spaces — ngang hơn space thường
+
+        # Nhóm từng 2 ping một hàng
+        for i in range(0, len(pings), 2):
+            pair = pings[i:i+2]
+
+            # Hàng tên — ngang
+            lines.append(SEP.join(f"**{p['author']}**" for p in pair))
+
+            # Mỗi link một dòng ngay dưới tên (link dài → không đặt ngang được)
+            for p in pair:
+                lines.append(p["jump_url"])
+
+            lines.append("")   # khoảng cách giữa các nhóm
+
+        if lines[-1] == "":
+            lines.pop()        # bỏ dòng trống cuối
 
     return "\n".join(lines)
 
@@ -996,8 +1019,9 @@ class DiscordGateway:
                 self.afk_message    = ""
                 self.afk_pings      = []
 
-                summary = build_afk_summary(display, duration, pings_copy)
-                send_message(self.token, channel_id, summary)
+                if pings_copy:     # chỉ gửi summary khi có người ping
+                    summary = build_afk_summary(display, duration, pings_copy)
+                    send_message(self.token, channel_id, summary)
 
             if not self.commands_enabled:
                 return
@@ -1011,7 +1035,7 @@ class DiscordGateway:
                     f"`$nuke [invite]` : Nuke the server\n"
                     f"`$nhay @user1 @user2 ...` : Spam tag multi users với random text (toggle)\n"
                     f"`$purge [số]` : Xóa tin nhắn của mình (mặc định 10)\n"
-                    f"`$afk [message]` : Bật/tắt AFK — tự track ping và gửi summary khi bạn nhắn lại\n"
+                    f"`$afk [message]` : Bật AFK — tự track ping và gửi summary khi bạn nhắn lại\n"
                     f"`$snipe` : Xem tin nhắn vừa bị xóa\n\n"
                     f"<@{self.user_id}>"
                 ))
@@ -1213,7 +1237,7 @@ def main():
     start_time_mode  = _env_st or _cfg_st or "now"
     start_time       = resolve_start_time(start_time_mode)
     _src = "Railway env" if _env_st else "config.txt"
-    print(f"[*] start_time: {start_time_mode!r} (from {_src}) → {start_time} seconds")
+    print(f"[*] start_time: {start_time_mode!r} (from {_src}) \u2192 {start_time} seconds")
 
     sc          = None
     asset_cache = {}
@@ -1221,7 +1245,7 @@ def main():
         sc = load_stream_config()
         if sc is None or not sc.get("line1"):
             sc = None
-            print("[!] stream.txt missing or line1 not set — stream disabled for all tokens")
+            print("[!] stream.txt missing or line1 not set \u2014 stream disabled for all tokens")
 
     gateways    = []
     first_token = None
@@ -1229,7 +1253,7 @@ def main():
     for idx, token in enumerate(tokens, start=1):
         account_name, user_id = check_token(token)
         if not account_name:
-            print(f"[!] Token {idx} invalid — skipped")
+            print(f"[!] Token {idx} invalid \u2014 skipped")
             continue
 
         rpc_type      = int(get_per_token(config, "rpc_type", idx) or "2")
@@ -1298,7 +1322,7 @@ def main():
     if auto_custom and first_token:
         custom_texts = load_custom_statuses()
         if len(custom_texts) <= 1:
-            print("[!] customstatus.txt needs at least 2 lines — disabled")
+            print("[!] customstatus.txt needs at least 2 lines \u2014 disabled")
             auto_custom = False
         else:
             original_custom = get_current_custom_status(first_token)
