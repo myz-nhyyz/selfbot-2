@@ -1,7 +1,10 @@
-👁 Alex541
-❄ Lucas541
-😶‍🌫 V4P3
-👾 Shinonome541
-😶‍🌫 Bố là alex541
-👻 Alo vũ à vũ?
-👀 2k10 kit boom
+# One status per line. Bot rotates through these in order (loops forever).
+# Requires at least 2 lines, and autochangecustomstatus_N=true for the token.
+# Delay is set per token in config.txt via customstatus_delay_N (supports s/m/h/d).
+# Supports placeholders: {date} -> dd/mm/20yy, {time} -> HH:MM:SS (VN time)
+
+status one
+status two
+status three
+status four
+status ....

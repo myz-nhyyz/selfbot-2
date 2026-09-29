@@ -1,48 +1,93 @@
-token=
-token_2=
-token_3=
+# ─── Tokens ──────────────────────────────────────────────────────────
+# Discord user tokens, one per account. Add token_2, token_3, ... for more.
+# WARNING: never commit real tokens. Use env vars or a private config.
+token=YOUR_TOKEN_HERE
+token_2=YOUR_TOKEN_2_HERE
+token_3=YOUR_TOKEN_3_HERE
 
-application_id=1546092498063986698
+# ─── Discord application ID ──────────────────────────────────────────
+# Required for RPC/rich presence features.
+application_id=YOUR_APPLICATION_ID_HERE
+
+# ─── Per-token language ──────────────────────────────────────────────
+# en = English | vi = Vietnamese
+# can also be changed at runtime with $language <en|vi>
+language=en
+language_2=en
+language_3=en
+
+# ─── Per-token auto change custom status ─────────────────────────────
+# toggle per token
 autochangecustomstatus=false
+autochangecustomstatus_2=false
+autochangecustomstatus_3=false
+
+# delay between status changes: supports s / m / h / d
+# eg: 5 = 5s | 30s | 5m = 5 minutes | 2h | 1d | 7d | 30d
+customstatus_delay=5
+customstatus_delay_2=5
+customstatus_delay_3=5
+
+# ─── Per-token auto change stream (RPC rotate) ───────────────────────
+# rotates between slot A and slot B in stream.txt
+# only works when stream=true for the same token
 autochangestream=false
-stream=false        # token 1 bật RPC
-stream_2=true     # token 2 tắt RPC
-stream_3=true      # token 3 bật RPC
+autochangestream_2=false
+autochangestream_3=false
+
+# rotate delay: s / m / h / d
+stream_rotate_delay=5
+stream_rotate_delay_2=5
+stream_rotate_delay_3=5
+
+# ─── RPC stream per token ────────────────────────────────────────────
+stream=true
+stream_2=true
+stream_3=true
+
+# ─── Auto join voice ─────────────────────────────────────────────────
 auto_join_voice=false
-guild_id=1544280538129633282
-voice_channel_id=1544283285285240892
+guild_id=YOUR_GUILD_ID_HERE
+voice_channel_id=YOUR_VOICE_CHANNEL_ID_HERE
 
 auto_join_voice_2=false
-guild_id_2=152763432809844339
-voice_channel_id_2=1542766616796725379
+guild_id_2=YOUR_GUILD_ID_2_HERE
+voice_channel_id_2=YOUR_VOICE_CHANNEL_ID_2_HERE
 
 auto_join_voice_3=false
-guild_id_3=1527634328098443395
-voice_channel_id_3=1537555898577195281
-fakelive=true      # token 1 fake live voice
-fakelive_2=true   # token 2 không fake live
-fakelive_3=true    # token 3 fake live voice
+guild_id_3=YOUR_GUILD_ID_3_HERE
+voice_channel_id_3=YOUR_VOICE_CHANNEL_ID_3_HERE
 
-SELFBOT=false      ← token 1 bật lệnh
-SELFBOT_2=true   ← token 2 tắt lệnh
-SELFBOT_3=true    ← token 3 bật lệnh
+# ─── Fake live (only meaningful when auto_join_voice is on) ──────────
+fakelive=false
+fakelive_2=false
+fakelive_3=false
 
-# elapsed, now, today, 1y, 3y, 30d, 180d
+# ─── Selfbot commands toggle per token ───────────────────────────────
+SELFBOT=true
+SELFBOT_2=true
+SELFBOT_3=true
+
+# ─── RPC start time ──────────────────────────────────────────────────
+# elapsed, now, today, 1y, 3y, 30d, 180d, or a unix timestamp
 start_time=now
 
+# ─── RPC type per token ──────────────────────────────────────────────
 # 0=Playing, 1=Streaming, 2=Listening, 3=Watching, 5=Competing
-rpc_type=2       # token 1
-rpc_type_2=3     # token 2
-rpc_type_3=2     # token  3
+rpc_type=2
+rpc_type_2=2
+rpc_type_3=2
 
-rpc_name=
-rpc_name_2=Viola
-rpc_name_3=Seto
+# ─── RPC name per token ──────────────────────────────────────────────
+rpc_name=MyApp
+rpc_name_2=MyApp2
+rpc_name_3=MyApp3
 
+# ─── Game activity presets (unused placeholder) ──────────────────────
 # game preset: roblox, minecraft, valorant, cs2, lol
 game_activity=
 
-# custom game app (ưu tiên hơn preset)
+# custom game app (takes priority over preset)
 game_activity_id=
 game_activity_name=
 game_activity_type=0
