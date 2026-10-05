@@ -1,7 +1,90 @@
-# One line per message. $nhay picks a random line and appends mentions.
-# Leave some variation so the spam doesn't look identical every time.
-
-line one here
-line two here
-line three here
-line four here
+nhay_1=
+# ĐĨ LỒN MẸ MÀY?
+# KHÓC 😂
+# QUỲ MẸ MÀY XUỐNG
+# BỐ NOVA TỚI CHƠI
+# BỐ XUẤT TINH VÀO HỌNG MÀY 😂😂😂
+# BỊ RÉO CAY À?
+# MẠNH LÊN 😂😂😂
+# CHẬM VẬY 😂😂😂
+# LẠY BỐ TAG NHANH LÊN
+# HẠ ĐẲNG LÊN TIẾNG 😂😂😂
+# RUỒI BU DƯỚI CHÂN TAO ĐÒI CHAN À?
+# KHÓC RỒI À 😝
+# BỐ NOVA VĨ ĐẠI
+# QUỲ XUỐNG TRƯỚC BỐ NOVA
+# NÃO CHU CHOA À? 👻
+# CẠN NGÔN DÙNG PROMPT À EM? 👻👻👻
+# MẤY CON TUẤT BIẾT NÓI À? 😂
+# NAY TUẤT MẠNH MIỆNG VẬY?
+# ALO =))))) =)))) =)))) 😂
+# DÂN ỬA LÊN TIẾNG 👻😝
+# TỰ XƯNG LÀ TƯỚNG, THẾ HÓA RA BẠI TƯỚNG À 😂
+# TUẤT TƯỞNG HAY XD
+# KHÔNG BIẾT MẸ M THỤ TINH TAO HAY THỤ TINH CHÓ MÀ LẠI RA M
+# M CÓ BỊ ĐỘT BIẾN ALELE KHÔNG THẾ XD
+# GEN M LỖI THỜI À?
+# SAO LẠI QUỲ THẾ, THÈM BÚ C T THẾ À CON
+# T SINH RA M MÀ THG ÓC C
+# PROMPT A TỰ LÀM CẦN ĐÉO J PROMPT LŨ ĐÚ
+# T CÒN CHƯA MỞ MỒM MÀ NHÉT CHỮ KÊU TẬP ĐÚ À
+# MẸ M ĐANG CẦU XIN CAK T NÈ
+# SPAM COI THG NÀO ĂN FLAG TRƯỚC? 😂
+# T 1 TAY THỦ DÂM CHO MẸ M, 1 TAY 1 LỌ XUẤT LÊN MẶT M NÈ
+# KHỔ QUÁ BIẾT T MẠNH RỒI ĐỪNG BÀN
+# LÈ NHÈ MẤY CÁI NGÔN NHƯ BỌN LỖI GEN THÌ CHỊU
+# CLMM CHỨ SỦA
+# MẸ M LỘ LINK VS T KÌA, XEM RỒI THẨM ĐI
+# TAO ĐANG ĐÉO NÓI CHUYỆN VỚI M À CON
+# MỞ MIỆNG RA LÀ THẤY MÙI SỮA MẸ CHƯA CÚN À
+# TAY TO NHƯNG NÃO BẰNG HẠT ĐẬU À EM
+# MÀY CHỬI TAO ĐƯỢC 1 CÂU TAO CHỬI MÀY 10 CÂU
+# BỐ ĐANG BẬN, ĐỢI XÍU RỒI CHỬI TIẾP
+# M CÓ BIẾT M ĐANG NÓI CHUYỆN VỚI AI KHÔNG?
+# RỚT NÃO TỪ LÚC ĐẺ À?
+# ĐỌC LẠI TIN NHẮN M ĐI RỒI TỰ NHỤC
+# M VIẾT CÂU NÀO TAO CŨNG ĐỌC ĐƯỢC NỘI DUNG ĐÉO CÓ GÌ
+# CÂU NÀY M VIẾT TỪ 2019 HAY SAO MÀ CŨ VẬY?
+# ĐỢI TAO 30 GIÂY, BỐ ĐANG HÚT CỎ ĐÃ
+# M BIẾT VIẾT HOA KHÔNG THẾ, CÓ MỖI CÁI NÚT SHIFT CŨNG LƯỜI BẤM
+# TAO TƯỞNG M VỪA BỊ ĐÁI DẦM CHỨ
+# BỐ NOVA ĐÃ TỚI, MẤY CON TRÁNH ĐƯỜNG
+# TAO LÀ BỐ CỦA M, M LÀ CON CỦA TAO, ĐƠN GIẢN VẬY
+# T NÓI CÂU NÀO M CŨNG CAY, T VUI LẮM
+# THẤY BỐ ONLINE M SỢ À?
+# ĐÉO BIẾT NÓI GÌ THÌ CÚT ĐI
+# BỐ MÀY ĐÉO RẢNH NGHE M SỦA
+# TAO KHINH M NHƯ KHINH CỌNG RÁC
+# ĐI RỬA MẶT ĐI RỒI HÃY NÓI CHUYỆN VỚI BỐ
+# M NÓI CÂU NÀO LÀ TAO THẤY M YẾU CÂU ĐÓ
+# BỐ ĐÉO CẦN NÓI NHIỀU, ĐÉO CẦN CÃI
+# M CÒN NON LẮM EM
+# VỀ NHÀ HỌC LẠI CÁCH CHỬI ĐI
+# M ĐANG TUỔI ĂN CHƠI, ĐỪNG BÀY ĐẶT
+# BỐ NOVA VÔ ĐỊCH
+# ĐỨNG DẬY ĐI, QUỲ HOÀI MỆT LẮM
+# TAO ĐANG ĐỢI M SỦA TIẾP ĐÓ
+# M SỦA HAY M KHÓC ĐẤY?
+# BỐ KHÔNG CẦN ĐÁNH, BỐ CHỈ CẦN NÓI
+# M CÒN LÂU MỚI BẰNG BỐ
+# BỐ ĐANG LIVE, M VÀO XEM ĐI
+# M LÀ CHÓ CỦA TAO, NHỚ CHƯA
+# BỐ MÀY ĐÉO CHẤP
+# M NGU NHƯNG TỰ TIN, ĐÓ LÀ ĐIỀU ĐÁNG KHEN
+# TAO ĐÉO GHÉT M, TAO CHỈ THẤY M TỘI
+# MÀY ĐANG DIỄN TRÒ GÌ VẬY EM?
+# NÃO M CÓ CHỨC NĂNG GÌ KHÔNG?
+# TAO CẦN M TRẢ LỜI, KHÔNG PHẢI SỦA
+# M VIẾT SAI CHÍNH TẢ NỮA RỒI EM
+# ĐỌC LẠI NHỮNG GÌ M VIẾT ĐI, NGƯỢNG CHƯA
+# ĐÃ BẢO RỒI, BỐ ĐÉO CHẤP
+# TAO NGỒI UỐNG TRÀ XEM M SỦA
+# M SỦA NHANH LÊN, BỐ BUỒN NGỦ RỒI
+# CÓ MỖI CÁI NÃO MÀ CŨNG TIẾC KHÔNG DÙNG
+# ĐÉO PHẢI TỰ NHIÊN M THUA ĐÂU
+# BỐ THẮNG TỪ LÚC M MỞ MIỆNG
+# VỀ ĐI EM, Ở ĐÂY KHÔNG CÓ ĐẤT DIỄN
+# TAO LÀ BỐ M, M LÀ CON T, RÕ CHƯA
+# BỐ ĐÉO CẦN ĐỨNG LÊN, BỐ NGỒI CŨNG CAO HƠN M
+nhay_2=
+nhay_3=

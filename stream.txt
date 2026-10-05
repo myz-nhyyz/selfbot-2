@@ -1,32 +1,28 @@
-# Image URL per token (large image of the RPC)
-# - token 1 : image_url
-# - token 2 : image_url_2
-# - token 3 : image_url_3
-image_url=YOUR_IMAGE_URL_HERE
-image_url_2=YOUR_IMAGE_URL_2_HERE
-image_url_3=YOUR_IMAGE_URL_3_HERE
+image_url=https://i.imgur.com/z1e6skZ.png
+image_url_2=https://i.imgur.com/z1e6skZ.png
+image_url_3=https://i.imgur.com/MEb2f1Y.png
 
 # ─── Token 1 — slot A ────────────────────────────────────────────────
-line1=Listening: your text here
-line2=some state here
+line1=Listening:🌙 night music
+line2=🎧 chillin' alone
 line3=
 button1_label=Profile
-button1_url=https://example.com
+button1_url=https://zyo.lol/nova_.inovation
 button2_label=
 button2_url=
 
 # ─── Token 1 — slot B (used when autochangestream is on) ─────────────
-line1_b=Watching: your text here
-line2_b=some state here
+line1_b=Watching:🌙 lofi girl
+line2_b=🎧 vibin' quietly
 line3_b=
 button1_label_b=Profile
-button1_url_b=https://example.com
+button1_url_b=https://zyo.lol/nova_.inovation
 button2_label_b=
 button2_url_b=
 
 # ─── Token 2 — slot A ────────────────────────────────────────────────
-line1_2=Listening: your text here
-line2_2=some state here
+line1_2=Listening:🌙 night music
+line2_2=🎧 chillin' alone
 line3_2=
 button1_label_2=
 button1_url_2=
@@ -34,17 +30,17 @@ button2_label_2=
 button2_url_2=
 
 # ─── Token 2 — slot B ────────────────────────────────────────────────
-line1_2_b=Watching: your text here
-line2_2_b=some state here
+line1_2_b=Watching:🌙 lofi girl
+line2_2_b=🎧 vibin' quietly
 line3_2_b=
-button1_label_2_b=
-button1_url_2_b=
+button1_label_2_b=Profile
+button1_url_2_b=https://zyo.lol/nova_.inovation
 button2_label_2_b=
 button2_url_2_b=
 
 # ─── Token 3 — slot A ────────────────────────────────────────────────
-line1_3=Listening: your text here
-line2_3=some state here
+line1_3=I just want to be lonely
+line2_3=🎧 chilling
 line3_3=
 button1_label_3=
 button1_url_3=
@@ -52,8 +48,8 @@ button2_label_3=
 button2_url_3=
 
 # ─── Token 3 — slot B ────────────────────────────────────────────────
-line1_3_b=Watching: your text here
-line2_3_b=some state here
+line1_3_b=I just want to be lonely (night)
+line2_3_b=🎧 chilling alone
 line3_3_b=
 button1_label_3_b=
 button1_url_3_b=

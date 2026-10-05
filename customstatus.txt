@@ -1,10 +1,135 @@
-# One status per line. Bot rotates through these in order (loops forever).
-# Requires at least 2 lines, and autochangecustomstatus_N=true for the token.
-# Delay is set per token in config.txt via customstatus_delay_N (supports s/m/h/d).
-# Supports placeholders: {date} -> dd/mm/20yy, {time} -> HH:MM:SS (VN time)
-
-status one
-status two
-status three
-status four
-status ....
+“I’m fine. Just tired.” 🥀
+“Not sad, just empty.” 🖤
+“Silence hurts.” 🌙
+“I miss what we were.” 🥀
+“Still waiting. Still stupid.” ⏳
+“Nothing feels the same.” 🍂
+“I’m tired of pretending.” 🎭
+“Maybe I cared too much.” 🫥
+“Some things never heal.” 🩹
+“Lost in my own thoughts.” 🌫️
+“I stopped expecting.” 🖤
+“It is what it is.” 🥀
+“I wish I could forget.” 🌙
+“No one really knows.” 🫥
+“Smiling, but barely.” 🙂
+“I miss you. That’s all.” 🥀
+“We were almost something.” 💔
+“I’m slowly disappearing.” 🌫️
+“Maybe I was never enough.” 🖤
+“Another night, same thoughts.” 🌙
+“I feel nothing anymore.” 🫥
+“Just leave me alone.” 🚪
+“Everything feels distant.” 🌌
+“I’m not okay.” 🥀
+“Still hurts. Still silent.” 🖤
+“You moved on. I didn’t.” 💔
+“Some memories still hurt.” 🍂
+“I gave too much.” 🥀
+“Alone, as usual.” 🌙
+“Guess I meant nothing.” 🖤
+“I’m tired.” 🥀
+“I feel empty.” 🖤
+“Not okay.” 🌧️
+“Still hurting.” 💔
+“Lost again.” 🌫️
+“Nothing feels right.” 🫥
+“I feel nothing.” 🖤
+“Just existing.” 🥀
+“Barely holding on.” 🫧
+“I’m fading.” 🌫️
+“Too tired to care.” 🖤
+“I stopped caring.” 🥀
+“I don’t feel loved.” 💔
+“Everything feels pointless.” 🌑
+“I’m just numb.” 🫥
+“Another lonely night.” 🌙
+“Same pain, different day.” 🍂
+“Silence feels safer.” 🖤
+“I miss the old me.” 🥀
+“I hate feeling this way.” 🌧️
+“I still miss you.” 💔
+“You changed.” 🍂
+“We changed.” 🥀
+“I wasn’t enough.” 🖤
+“You moved on.” 🌫️
+“I stayed behind.” 🥀
+“I loved you too much.” ❤️‍🩹
+“You were my favorite mistake.” 🖤
+“I wish you stayed.” 🌙
+“I wish we never met.” 🍂
+“You felt like home.” 🏠
+“Now you feel like a stranger.” 🌫️
+“I still remember everything.” 🥀
+“I remember. You don’t.” 💔
+“You forgot me so easily.” 🖤
+“I meant nothing to you.” 🥀
+“I was temporary.” ⏳
+“You were everything to me.” ❤️‍🩹
+“We ended without a goodbye.” 🌙
+“I miss us.” 🥀
+“I hate that I still care.” 🖤
+“You’re gone. I’m not over it.” 💔
+“I lost you and myself.” 🌫️
+“I loved someone who left.” 🥀
+“Maybe we were never meant to last.” 🍂
+“2AM thoughts.” 🌙
+“The nights feel longer.” 🥀
+“Another sleepless night.” 🌌
+“My mind won’t shut up.” 🫥
+“Nighttime hits different.” 🌙
+“It’s quiet again.” 🖤
+“Everyone’s asleep. I’m not.” 🌙
+“Just me and my thoughts.” 🌫️
+“The silence is loud.” 🥀
+“Thinking too much again.” 🫥
+“I wish I could sleep.” 🌙
+“Midnight feels lonely.” 🖤
+“The moon knows everything.” 🌙
+“Another night without you.” 💔
+“Some nights hurt more.” 🥀
+“I overthink everything.” 🌫️
+“Lost in my thoughts.” 🌌
+“Nothing but silence.” 🖤
+“The night remembers.” 🌙
+“I hate the quiet.” 🥀
+“I stopped explaining.” 🖤
+“I don’t expect anything anymore.” 🥀
+“Trust nobody.” 🕷️
+“I learned my lesson.” 🍂
+“Never again.” 🖤
+“I don’t chase anymore.” 🚶
+“Let them leave.” 🥀
+“I got used to losing people.” 🌫️
+“People change. I learned.” 🖤
+“I stopped being surprised.” 🥀
+“No expectations, no disappointment.” 🫥
+“I’m done trying.” 🖤
+“Keep your distance.” 🌑
+“I don’t care anymore.” 🥀
+“Nothing personal.” 🖤
+“You lost me.” 🍂
+“I know my place now.” 🌫️
+“I learned to let go.” 🕊️
+“Some doors stay closed.” 🚪
+“Silence is my answer.” 🖤
+“A heart full of silence.” 🖤
+“Fading into the background.” 🌫️
+“Drowning in memories.” 🌊
+“A ghost of who I was.” 👻
+“Lost between memories.” 🍂
+“Somewhere between okay and broken.” 🥀
+“A little less alive every day.” 🌑
+“Carrying what I cannot say.” 🫥
+“Smiling through the ruins.” 🥀
+“Memories hurt differently.” 🌙
+“The past still whispers.” 🍂
+“Broken things make less noise.” 🖤
+“I became a stranger to myself.” 🌫️
+“Some wounds stay invisible.” 🩹
+“I carry the silence.” 🥀
+“Beautiful memories, painful endings.” 💔
+“A heart that learned to stay quiet.” 🖤
+“The saddest stories stay untold.” 🌙
+“I disappeared without leaving.” 🌫️
+“Maybe peace looks like loneliness.” 🕊️

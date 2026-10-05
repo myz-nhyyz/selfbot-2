@@ -8,6 +8,7 @@ import threading
 import json
 import string
 import re
+import urllib.parse
 from datetime import datetime
 import pytz
 
@@ -17,202 +18,157 @@ except ImportError:
     websocket = None
 
 
-# ─── LANGUAGE STRINGS ────────────────────────────────────────────────────────
+# ─── TRANSLATIONS ────────────────────────────────────────────────────────────
 
-STRINGS = {
+TRANSLATIONS = {
     "en": {
-        "menu_title"      : "Super Self Bot",
-        "cmd_header"      : "🛠️ Commands",
-        "info_header"     : "📋 Info",
-        "misc_header"     : "🔧 Misc",
-        "desc_farm"       : "Spam messages to get exp for OWO or another bot",
-        "desc_nhay"       : "Spam tag multi users (toggle)",
-        "desc_spam"       : "Spam the same content N times, optional delay (s/m/h/d)",
-        "desc_dm"         : "Send a DM to one user",
-        "desc_nuke"       : "Nuke the server",
-        "desc_purge"      : "Delete your own messages (default 10)",
-        "desc_afk"        : "Toggle AFK — track pings when you reply",
-        "desc_snipe"      : "View deleted messages (filter by user)",
-        "desc_log"        : "View message edit history",
-        "desc_guilds"     : "List servers you are in",
-        "desc_userinfo"   : "User info (with avatar) — works in DM",
-        "desc_guild"      : "Current guild info",
-        "desc_id"         : "Get ID",
-        "desc_av"         : "Avatar link — works in DM",
-        "desc_banner"     : "Banner link — works in DM",
-        "desc_ping"       : "Gateway latency",
-        "desc_nick"       : "Change nickname in this server",
-        "desc_language"   : "Set bot language (en / vi)",
-        "err_no_guilds"   : "❌ Could not fetch server list.",
-        "err_av_fail"     : "❌ Could not fetch avatar for `{uid}`",
-        "err_banner_fail" : "❌ Could not fetch banner for `{uid}`",
-        "err_no_banner"   : "`{uid}` has no banner set.",
-        "err_nick_dm"     : "❌ $nick only works in servers.",
-        "err_guild_dm"    : "❌ This command only works in servers.",
-        "err_guild_fail"  : "❌ Could not fetch guild info `{gid}`",
-        "err_id_unknown"  : "❌ Not recognized. Use `$id @user` / `$id #channel` / `$id @role` / `$id <id>`.",
-        "err_userinfo_fail": "❌ Could not fetch info for `{uid}`.\n→ User not in cache, not in same guild, and /users failed.",
-        "err_dm_usage"    : "❌ Usage: $dm <user_id> <content>",
-        "err_dm_invalid"  : "❌ $dm: invalid user_id",
-        "err_dm_fail"     : "❌ Could not open DM with {uid}",
-        "err_spam_usage"  : "❌ Usage: $spam <count> <content> [delay]",
-        "err_spam_count"  : "❌ $spam: invalid count",
-        "err_spam_delay"  : "❌ $spam: invalid delay (use s/m/h/d)",
-        "err_nhay_none"   : "❌ $nhay: no user mentioned",
-        "err_nhay_empty"  : "❌ nhay.txt is empty or missing",
-        "ping_wait"       : "🏓 Ping: waiting for first heartbeat (~40s).",
-        "ping_ok"         : "🏓 Pong! Gateway latency: **{ms} ms**",
-        "afk_on"          : "**AFK on{preview}** — reply to see pings received.",
-        "afk_reply"       : "Currently {name} is AFK (<t:{ts}:R>){reason}",
-        "afk_welcome"     : ":stopwatch: Welcome back, **{name}**! You were AFK for {dur} and received **{n}** ping(s).",
-        "afk_pings_header": "**Pings received**",
-        "snipe_none"      : "No recent deleted messages from {label}.",
-        "snipe_header"    : "**Snipe ({n}/{total}):**",
-        "log_none"        : "No edits recorded for {label}.",
-        "log_header"      : "**Edit log ({n}/{total}):**",
-        "log_before"      : "**Before:** {v}",
-        "log_after"       : "**After:** {v}",
-        "label_user"      : "that user",
-        "label_channel"   : "this channel",
-        "id_chan_current" : "channel (current)",
-        "lang_set"        : "Language set to **{lang}**.",
-        "lang_usage"      : "Usage: $language <en|vi>",
-        "lang_invalid"    : "❌ Invalid language. Use `en` or `vi`.",
-        "user_info_header": "**User Info**",
-        "u_username"      : "**Username:** `{v}`",
-        "u_display"       : "**Display name:** {v}",
-        "u_none"          : "*(none)*",
-        "u_id"            : "**ID:** `{v}`",
-        "u_bot"           : "**Bot:** {v}",
-        "u_created"       : "**Account created:** {v}",
-        "u_avatar"        : "**Avatar:** {v}",
-        "u_banner"        : "**Banner:** {v}",
-        "u_accent"        : "**Accent color:** `#{v}`",
-        "u_nick"          : "**Nickname:** {v}",
-        "u_join"          : "**Joined server:** {v}",
-        "u_roles"         : "**Roles ({n}):** {v}",
-        "guild_info"      : "**Guild Info**",
-        "g_name"          : "**Name:** {v}",
-        "g_id"            : "**ID:** `{v}`",
-        "g_owner"         : "**Owner ID:** `{v}`",
-        "g_created"       : "**Created:** {v}",
-        "g_members"       : "**Members:** {v}",
-        "g_online"        : "**Online:** {v}",
-        "g_online_count"  : "**Online member:** {v}",
-        "g_online_unknown": "**Online member:** `?` *(gateway has no presence data — large guild)*",
-        "g_boost"         : "**Boost tier:** {tier} ({n} boost)",
-        "g_region"        : "**Region:** {v}",
-        "g_verif"         : "**Verification level:** {v}",
-        "g_icon"          : "**Icon:** {v}",
-        "g_banner"        : "**Banner:** {v}",
-        "g_vanity"        : "**Vanity:** discord.gg/{v}",
-        "g_features"      : "**Features:** {v}",
-        "id_kind_role"    : "role",
-        "id_kind_channel" : "channel",
-        "id_kind_user"    : "user",
-        "id_kind_id"      : "id",
+        # AFK
+        "afk_on":              "**AFK ON{preview}** — type any message to see received pings.",
+        "afk_summary_header":  ":stopwatch: Welcome back, **{name}**! You were AFK for {duration} and received **{n}** ping(s).",
+        "afk_pings_section":   "**Received pings**",
+        "afk_reply":           "**{name}** is currently AFK (<t:{ts}:R>){reason}",
+        # Snipe / Log
+        "snipe_header":        "**Snipe ({picked}/{total}):**",
+        "snipe_empty":         "No recently deleted messages from {label}.",
+        "log_header":          "**Edit log ({picked}/{total}):**",
+        "log_empty":           "No edits recorded from {label}.",
+        "log_before":          "**Before:**",
+        "log_after":           "**After:**",
+        "label_user":          "that user",
+        "label_channel":       "this channel",
+        # Info
+        "userinfo_fail":       "❌ Could not fetch user info for `{uid}`.\n→ User not in cache, not in a shared guild, and /users failed.",
+        "av_fail":             "❌ Could not fetch avatar for `{uid}`",
+        "guild_fail":          "❌ Could not fetch guild info for `{gid}`",
+        "guild_only":          "❌ This command only works in a server.",
+        "id_invalid":          "❌ Could not parse. Use `$id @user` / `$id #channel` / `$id @role` / `$id <id>`.",
+        # Spam / DM / Purge
+        "spam_usage":          "❌ Usage: `$spam <count> <content>`",
+        "spam_invalid":        "❌ $spam: invalid count",
+        "dm_usage":            "❌ Usage: `$dm <user_id> <content>`",
+        "dm_invalid":          "❌ $dm: invalid user_id",
+        "dm_fail":             "❌ Could not open DM with {uid}",
+        "dm_sent":             "✅ DM sent to {uid}",
+        "nick_dm_only":        "❌ $nick only works in a server",
+        # Nhay / Farm
+        "nhay_no_mention":     "❌ $nhay: no user mentioned",
+        "nhay_no_lines":       "❌ nhay.txt is empty or not found",
+        "nhay_started":        "✅ Nhay started → {targets}",
+        "nhay_stopped":        "✅ Nhay stopped",
+        "farm_started":        "✅ Farm started",
+        "farm_stopped":        "✅ Farm stopped",
+        # Nuke
+        "nuke_no_dm":          "❌ Cannot nuke in DM",
+        "nuke_no_invite":      "❌ No invite provided",
+        "nuke_bad_invite":     "❌ Could not resolve invite {invite}",
+        "nuke_no_perm":        "❌ Cannot access this server (missing permissions)",
+        "nuke_starting":       "⚔️ Nuking {guild} ({gid})",
+        "nuke_done":           "✅ Nuke completed",
+        "nuke_deleted":        "🗑️ Deleted all channels",
+        "nuke_created":        "📁 Created #{name}",
+        "nuke_webhook":        "🪝 Webhook created in #{name}",
+        # Menu
+        "menu_title":          "## Super Self Bot - {name}",
+        "menu_commands_header":"**🛠️ Commands** :",
+        "menu_info_header":    "**📋 Info** :",
+        "menu_other_header":   "**🔧 Other** :",
+        # Language
+        "lang_current":        "🌐 Current language: **{lang}**",
+        "lang_changed":        "✅ Language changed to **{lang}**",
+        "lang_invalid":        "❌ Unsupported `{code}`. Only: vi, en",
+        # Purge
+        "purge_started":       "🗑️ Deleting {n} messages...",
+        "purge_done":          "✅ Deleted {n} messages",
+        # Misc
+        "ping_wait":           "🏓 Ping: waiting for first heartbeat (~40s).",
+        "ping_ok":             "🏓 Pong! Gateway latency: **{ms} ms**",
+        "nick_ok":             "✅ Nickname changed",
+        "nick_fail":           "❌ Failed to change nickname",
     },
     "vi": {
-        "menu_title"      : "Super Self Bot",
-        "cmd_header"      : "🛠️ Lệnh",
-        "info_header"     : "📋 Info",
-        "misc_header"     : "🔧 Khác",
-        "desc_farm"       : "Spam tin nhắn để lấy exp cho OWO hoặc bot khác",
-        "desc_nhay"       : "Spam tag nhiều user (toggle)",
-        "desc_spam"       : "Spam đúng nội dung đó N lần, delay tuỳ chọn (s/m/h/d)",
-        "desc_dm"         : "Gửi DM cho 1 người",
-        "desc_nuke"       : "Nuke server",
-        "desc_purge"      : "Xóa tin nhắn của mình (mặc định 10)",
-        "desc_afk"        : "Bật/tắt AFK — tự track ping khi bạn nhắn lại",
-        "desc_snipe"      : "Xem tin nhắn bị xóa (lọc theo user)",
-        "desc_log"        : "Xem lịch sử chỉnh sửa tin nhắn",
-        "desc_guilds"     : "List server đang ở",
-        "desc_userinfo"   : "Info user (kèm avatar) — DM OK",
-        "desc_guild"      : "Info guild hiện tại",
-        "desc_id"         : "Lấy ID",
-        "desc_av"         : "Link avatar — DM OK",
-        "desc_banner"     : "Link banner — DM OK",
-        "desc_ping"       : "Độ trễ gateway",
-        "desc_nick"       : "Đổi nickname trong server này",
-        "desc_language"   : "Đổi ngôn ngữ bot (en / vi)",
-        "err_no_guilds"   : "❌ Không lấy được list server.",
-        "err_av_fail"     : "❌ Không lấy được avatar của `{uid}`",
-        "err_banner_fail" : "❌ Không lấy được banner của `{uid}`",
-        "err_no_banner"   : "`{uid}` không có banner.",
-        "err_nick_dm"     : "❌ $nick chỉ dùng trong server.",
-        "err_guild_dm"    : "❌ Lệnh này chỉ dùng trong server.",
-        "err_guild_fail"  : "❌ Không lấy được info guild `{gid}`",
-        "err_id_unknown"  : "❌ Không nhận diện được. Dùng `$id @user` / `$id #channel` / `$id @role` / `$id <id>`.",
-        "err_userinfo_fail": "❌ Không lấy được info user `{uid}`.\n→ User không trong cache, không cùng guild, và /users fail.",
-        "err_dm_usage"    : "❌ Dùng: $dm <user_id> <nội dung>",
-        "err_dm_invalid"  : "❌ $dm: user_id không hợp lệ",
-        "err_dm_fail"     : "❌ Không mở được DM với {uid}",
-        "err_spam_usage"  : "❌ Dùng: $spam <số> <nội dung> [delay]",
-        "err_spam_count"  : "❌ $spam: số không hợp lệ",
-        "err_spam_delay"  : "❌ $spam: delay không hợp lệ (dùng s/m/h/d)",
-        "err_nhay_none"   : "❌ $nhay: chưa mention user nào",
-        "err_nhay_empty"  : "❌ nhay.txt rỗng hoặc không tồn tại",
-        "ping_wait"       : "🏓 Ping: đang chờ heartbeat đầu tiên (đợi ~40s).",
-        "ping_ok"         : "🏓 Pong! Gateway latency: **{ms} ms**",
-        "afk_on"          : "**AFK bật{preview}** — nhắn tin lại để xem ping đã nhận.",
-        "afk_reply"       : "Hiện tại {name} đang AFK (<t:{ts}:R>){reason}",
-        "afk_welcome"     : ":stopwatch: Chào mừng bạn trở lại, **{name}**! Bạn đã AFK trong {dur} và nhận được **{n}** ping.",
-        "afk_pings_header": "**Các ping đã nhận**",
-        "snipe_none"      : "Không có tin nhắn nào bị xóa gần đây của {label}.",
-        "snipe_header"    : "**Snipe ({n}/{total}):**",
-        "log_none"        : "Chưa ghi nhận chỉnh sửa tin nhắn nào của {label}.",
-        "log_header"      : "**Edit log ({n}/{total}):**",
-        "log_before"      : "**Cũ:** {v}",
-        "log_after"       : "**Mới:** {v}",
-        "label_user"      : "user đó",
-        "label_channel"   : "kênh này",
-        "id_chan_current" : "channel (hiện tại)",
-        "lang_set"        : "Đã đổi ngôn ngữ sang **{lang}**.",
-        "lang_usage"      : "Dùng: $language <en|vi>",
-        "lang_invalid"    : "❌ Ngôn ngữ không hợp lệ. Dùng `en` hoặc `vi`.",
-        "user_info_header": "**User Info**",
-        "u_username"      : "**Username:** `{v}`",
-        "u_display"       : "**Display name:** {v}",
-        "u_none"          : "*(không có)*",
-        "u_id"            : "**ID:** `{v}`",
-        "u_bot"           : "**Bot:** {v}",
-        "u_created"       : "**Account tạo:** {v}",
-        "u_avatar"        : "**Avatar:** {v}",
-        "u_banner"        : "**Banner:** {v}",
-        "u_accent"        : "**Accent color:** `#{v}`",
-        "u_nick"          : "**Nickname:** {v}",
-        "u_join"          : "**Join server:** {v}",
-        "u_roles"         : "**Roles ({n}):** {v}",
-        "guild_info"      : "**Guild Info**",
-        "g_name"          : "**Name:** {v}",
-        "g_id"            : "**ID:** `{v}`",
-        "g_owner"         : "**Owner ID:** `{v}`",
-        "g_created"       : "**Created:** {v}",
-        "g_members"       : "**Members:** {v}",
-        "g_online"        : "**Online:** {v}",
-        "g_online_count"  : "**Online member:** {v}",
-        "g_online_unknown": "**Online member:** `?` *(gateway không có presence data — guild lớn)*",
-        "g_boost"         : "**Boost tier:** {tier} ({n} boost)",
-        "g_region"        : "**Region:** {v}",
-        "g_verif"         : "**Verification level:** {v}",
-        "g_icon"          : "**Icon:** {v}",
-        "g_banner"        : "**Banner:** {v}",
-        "g_vanity"        : "**Vanity:** discord.gg/{v}",
-        "g_features"      : "**Features:** {v}",
-        "id_kind_role"    : "role",
-        "id_kind_channel" : "channel",
-        "id_kind_user"    : "user",
-        "id_kind_id"      : "id",
+        # AFK
+        "afk_on":              "**AFK bật{preview}** — nhắn tin lại để xem ping đã nhận.",
+        "afk_summary_header":  ":stopwatch: Chào mừng bạn trở lại, **{name}**! Bạn đã AFK trong {duration} và nhận được **{n}** ping.",
+        "afk_pings_section":   "**Các ping đã nhận**",
+        "afk_reply":           "Hiện tại **{name}** đang AFK (<t:{ts}:R>){reason}",
+        # Snipe / Log
+        "snipe_header":        "**Snipe ({picked}/{total}):**",
+        "snipe_empty":         "Không có tin nhắn nào bị xóa gần đây của {label}.",
+        "log_header":          "**Edit log ({picked}/{total}):**",
+        "log_empty":           "Chưa ghi nhận chỉnh sửa tin nhắn nào của {label}.",
+        "log_before":          "**Cũ:**",
+        "log_after":           "**Mới:**",
+        "label_user":          "user đó",
+        "label_channel":       "kênh này",
+        # Info
+        "userinfo_fail":       "❌ Không lấy được info user `{uid}`.\n→ User không trong cache, không cùng guild, và /users fail.",
+        "av_fail":             "❌ Không lấy được avatar của `{uid}`",
+        "guild_fail":          "❌ Không lấy được info guild `{gid}`",
+        "guild_only":          "❌ Lệnh này chỉ dùng trong server.",
+        "id_invalid":          "❌ Không nhận diện được. Dùng `$id @user` / `$id #channel` / `$id @role` / `$id <id>`.",
+        # Spam / DM / Purge
+        "spam_usage":          "❌ Dùng: `$spam <số> <nội dung>`",
+        "spam_invalid":        "❌ $spam: số không hợp lệ",
+        "dm_usage":            "❌ Dùng: `$dm <user_id> <nội dung>`",
+        "dm_invalid":          "❌ $dm: user_id không hợp lệ",
+        "dm_fail":             "❌ Không mở được DM với {uid}",
+        "dm_sent":             "✅ Đã gửi DM tới {uid}",
+        "nick_dm_only":        "❌ $nick chỉ dùng trong server",
+        # Nhay / Farm
+        "nhay_no_mention":     "❌ $nhay: Chưa tag user nào",
+        "nhay_no_lines":       "❌ nhay.txt trống hoặc không tồn tại",
+        "nhay_started":        "✅ Đã bắt đầu Nhay → {targets}",
+        "nhay_stopped":        "✅ Đã dừng Nhay",
+        "farm_started":        "✅ Đã bắt đầu Farm",
+        "farm_stopped":        "✅ Đã dừng Farm",
+        # Nuke
+        "nuke_no_dm":          "❌ Không thể nuke trong DM",
+        "nuke_no_invite":      "❌ Chưa nhập invite",
+        "nuke_bad_invite":     "❌ Không resolve được invite {invite}",
+        "nuke_no_perm":        "❌ Không có quyền truy cập server (thiếu permission)",
+        "nuke_starting":       "⚔️ Đang nuke {guild} ({gid})",
+        "nuke_done":           "✅ Nuke hoàn tất",
+        "nuke_deleted":        "🗑️ Đã xóa toàn bộ channel",
+        "nuke_created":        "📁 Đã tạo #{name}",
+        "nuke_webhook":        "🪝 Webhook đã tạo trong #{name}",
+        # Menu
+        "menu_title":          "## Super Self Bot - {name}",
+        "menu_commands_header":"**🛠️ Lệnh** :",
+        "menu_info_header":    "**📋 Info** :",
+        "menu_other_header":   "**🔧 Khác** :",
+        # Language
+        "lang_current":        "🌐 Ngôn ngữ hiện tại: **{lang}**",
+        "lang_changed":        "✅ Đã đổi ngôn ngữ sang **{lang}**",
+        "lang_invalid":        "❌ Không hỗ trợ `{code}`. Chỉ hỗ trợ: vi, en",
+        # Purge
+        "purge_started":       "🗑️ Đang xóa {n} tin nhắn...",
+        "purge_done":          "✅ Đã xóa {n} tin nhắn",
+        # Misc
+        "ping_wait":           "🏓 Ping: đang chờ heartbeat đầu tiên (đợi ~40s).",
+        "ping_ok":             "🏓 Pong! Gateway latency: **{ms} ms**",
+        "nick_ok":             "✅ Đã đổi nickname",
+        "nick_fail":           "❌ Đổi nickname thất bại",
     },
 }
 
+SUPPORTED_LANGS = {"vi": "Tiếng Việt", "en": "English"}
+DEFAULT_LANG = "en"
 
-def tr(lang, key, **kwargs):
-    s = STRINGS.get(lang, STRINGS["en"]).get(key, STRINGS["en"].get(key, key))
-    try:
-        return s.format(**kwargs) if kwargs else s
-    except Exception:
-        return s
+
+def t(key, lang=None, **kwargs):
+    """Look up a translated string. Falls back to EN, then to the key itself."""
+    lang = lang if lang in TRANSLATIONS else DEFAULT_LANG
+    text = TRANSLATIONS.get(lang, {}).get(key)
+    if text is None:
+        text = TRANSLATIONS[DEFAULT_LANG].get(key)
+    if text is None:
+        return key
+    if kwargs:
+        try:
+            return text.format(**kwargs)
+        except Exception:
+            return text
+    return text
 
 
 # ─── TIME ────────────────────────────────────────────────────────────────────
@@ -231,57 +187,44 @@ def replace_placeholders(text):
     return text
 
 
-def parse_duration(value, default=5):
-    if value is None:
-        return default
-    s = str(value).strip().lower()
-    if not s:
-        return default
-    m = re.match(r"^(\d+(?:\.\d+)?)\s*([smhd]?)$", s)
-    if not m:
-        return None
-    try:
-        num = float(m.group(1))
-    except ValueError:
-        return None
-    unit = m.group(2) or "s"
-    mult = {"s": 1, "m": 60, "h": 3600, "d": 86400}[unit]
-    secs = int(num * mult)
-    return max(1, secs)
-
-
-def parse_duration_or_default(value, default=5):
-    v = parse_duration(value, default=default)
-    return default if v is None else v
-
-
 def resolve_start_time(mode):
-    now_s = int(time.time())
-    mode = (mode or "now").strip().lower()
+    """Return UNIX milliseconds. Priority: env START_TIME > config start_time > now."""
+    _env_st = os.environ.get("START_TIME", "").strip().strip('"').strip("'")
+    if _env_st:
+        try:
+            v = int(_env_st)
+            if v < 1_000_000_000_000:
+                v = v * 1000
+            return v
+        except ValueError:
+            print(f"[!] START_TIME={_env_st!r} is not a number — using config/default")
+
+    mode = (mode or "now").strip().strip('"').strip("'").lower()
+    now_ms = int(time.time() * 1000)
 
     if mode == "elapsed":
-        return now_s - 60
-    if mode == "now":
-        return now_s
+        return now_ms - 60_000
+    if mode == "now" or not mode:
+        return now_ms
     if mode == "today":
         tz = pytz.timezone("Asia/Ho_Chi_Minh")
         d = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
-        return int(d.timestamp())
+        return int(d.timestamp() * 1000)
     if mode == "1y":
-        return now_s - 365 * 24 * 3600
+        return now_ms - 365 * 24 * 3600 * 1000
     if mode == "3y":
-        return now_s - 3 * 365 * 24 * 3600
+        return now_ms - 3 * 365 * 24 * 3600 * 1000
     if mode == "30d":
-        return now_s - 30 * 24 * 3600
+        return now_ms - 30 * 24 * 3600 * 1000
     if mode == "180d":
-        return now_s - 180 * 24 * 3600
+        return now_ms - 180 * 24 * 3600 * 1000
     try:
-        val = int(mode)
-        if val > 1_000_000_000_000:
-            val = val // 1000
-        return val
+        v = int(mode)
+        if v < 1_000_000_000_000:
+            v = v * 1000
+        return v
     except ValueError:
-        return now_s
+        return now_ms
 
 
 def snowflake_to_str(snowflake):
@@ -329,10 +272,9 @@ def load_config():
 
 
 def parse_voice_pairs(guild_str, channel_str):
-    import re as _re
     def extract(s):
         s = s.strip()
-        ids = _re.findall(r"\(([^)]+)\)", s)
+        ids = re.findall(r"\(([^)]+)\)", s)
         if ids:
             return [i.strip() for i in ids if i.strip()]
         return [i.strip() for i in s.split(",") if i.strip()]
@@ -343,11 +285,11 @@ def parse_voice_pairs(guild_str, channel_str):
 
 
 def get_per_token(config, key, index):
-    if index == 1:
-        return config.get(key, "")
     indexed = config.get(f"{key}_{index}", "")
     if indexed:
         return indexed
+    if index == 1:
+        return config.get(key, "")
     return config.get(key, "")
 
 
@@ -358,12 +300,81 @@ def load_tokens(config):
         tokens.append(token)
     i = 2
     while True:
-        t = config.get(f"token_{i}", "").strip()
-        if not t:
+        t_ = config.get(f"token_{i}", "").strip()
+        if not t_:
             break
-        tokens.append(t)
+        tokens.append(t_)
         i += 1
     return tokens
+
+
+def parse_emoji_list(raw):
+    if not raw:
+        return []
+    return [e.strip() for e in raw.split(",") if e.strip()]
+
+
+def parse_react_target(raw):
+    raw = (raw or "all").strip().lower()
+    if raw == "all":
+        return {"mode": "all"}
+    if raw == "reply":
+        return {"mode": "reply"}
+    ids = re.findall(r"\d+", raw)
+    if ids:
+        return {"mode": "user", "ids": ids}
+    return {"mode": "all"}
+
+
+def load_nhay(token_index):
+    """
+    Parse nhay.txt by nhay_N= blocks.
+    Fallback rotation:
+      token 1: 1 → 2 → 3
+      token 2: 2 → 3 → 1
+      token 3: 3 → 1 → 2
+    """
+    blocks = {}
+    current = None
+
+    try:
+        with open("nhay.txt", "r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.rstrip("\n").rstrip("\r")
+                stripped = line.strip()
+
+                m = re.match(r"^nhay_(\d+)\s*=\s*(.*)$", stripped)
+                if m:
+                    current = int(m.group(1))
+                    blocks.setdefault(current, [])
+                    tail = m.group(2).strip()
+                    if tail:
+                        blocks[current].append(tail)
+                    continue
+
+                if current is not None and stripped:
+                    blocks[current].append(stripped)
+    except FileNotFoundError:
+        print(f"[!] nhay.txt not found")
+        return []
+
+    if token_index == 1:
+        order = [1, 2, 3]
+    elif token_index == 2:
+        order = [2, 3, 1]
+    elif token_index == 3:
+        order = [3, 1, 2]
+    else:
+        order = [1, 2, 3]
+
+    for i in order:
+        lines = blocks.get(i, [])
+        if lines:
+            print(f"[*] Token {token_index} loaded nhay block nhay_{i} ({len(lines)} lines)")
+            return lines
+
+    print(f"[!] Token {token_index}: no nhay block found in nhay.txt")
+    return []
 
 
 # ─── DISCORD REST ────────────────────────────────────────────────────────────
@@ -456,6 +467,28 @@ def send_message(token, channel_id, content):
     except requests.RequestException:
         pass
     return None
+
+
+def add_reaction(token, channel_id, message_id, emoji):
+    headers = {"Authorization": token, "Content-Type": "application/json"}
+    emoji_enc = urllib.parse.quote(emoji)
+    try:
+        r = requests.put(
+            f"https://discord.com/api/v9/channels/{channel_id}/messages/{message_id}"
+            f"/reactions/{emoji_enc}/@me",
+            headers=headers, timeout=10
+        )
+        if r.status_code == 429:
+            retry = r.json().get("retry_after", 1)
+            time.sleep(retry)
+            requests.put(
+                f"https://discord.com/api/v9/channels/{channel_id}/messages/{message_id}"
+                f"/reactions/{emoji_enc}/@me",
+                headers=headers, timeout=10
+            )
+        return r.status_code in (200, 204)
+    except requests.RequestException:
+        return False
 
 
 def purge_messages(token, channel_id, user_id, count):
@@ -645,7 +678,7 @@ def get_user_info(token, user_id, guild_id=None):
         )
         if r.status_code == 200:
             return r.json()
-        print(f"[!] /users/{user_id} → HTTP {r.status_code}")
+        print(f"[!] /users/{user_id} -> HTTP {r.status_code}")
     except requests.RequestException as e:
         print(f"[!] /users/{user_id} exception: {e}")
 
@@ -662,7 +695,7 @@ def get_user_info(token, user_id, guild_id=None):
                     merged = dict(user)
                     merged["_member"] = mem
                     return merged
-            print(f"[!] /guilds/{guild_id}/members/{user_id} → HTTP {r.status_code}")
+            print(f"[!] /guilds/{guild_id}/members/{user_id} -> HTTP {r.status_code}")
         except requests.RequestException as e:
             print(f"[!] member lookup exception: {e}")
 
@@ -728,7 +761,7 @@ def get_guild_bot_ids(token, guild_id, max_pages=20):
                 headers=headers, params={"limit": 1000, "after": after}, timeout=20
             )
             if r.status_code != 200:
-                print(f"[!] /guilds/{guild_id}/members → HTTP {r.status_code}")
+                print(f"[!] /guilds/{guild_id}/members -> HTTP {r.status_code}")
                 break
             members = r.json()
             if not members:
@@ -766,13 +799,6 @@ def build_avatar_url(user_id, avatar_hash):
     return f"https://cdn.discordapp.com/embed/avatars/{idx}.png"
 
 
-def build_banner_url(user_id, banner_hash):
-    if not banner_hash:
-        return None
-    ext = "gif" if banner_hash.startswith("a_") else "png"
-    return f"https://cdn.discordapp.com/banners/{user_id}/{banner_hash}.{ext}?size=1024"
-
-
 def parse_snipe_args(content, cmd_prefix):
     rest = content[len(cmd_prefix):].strip()
     target_uid = None
@@ -798,7 +824,7 @@ def parse_snipe_args(content, cmd_prefix):
 
 # ─── NUKE ────────────────────────────────────────────────────────────────────
 
-def nuke_server(token, guild_id, ad_invite, rpc_name):
+def nuke_server(token, guild_id, ad_invite, rpc_name, lang="en"):
     print("[*] Nuking server...")
     spam_content = (
         f"# your trash server got fucked by {rpc_name}\U0001f62d\U0001f602cry and report it to your mom\n"
@@ -818,7 +844,7 @@ def nuke_server(token, guild_id, ad_invite, rpc_name):
         if channels:
             for ch in channels:
                 delete_channel(token, ch["id"])
-        print("[+] Deleted all channels")
+        print(t("nuke_deleted", lang))
 
     def create_and_spam():
         while True:
@@ -830,13 +856,13 @@ def nuke_server(token, guild_id, ad_invite, rpc_name):
             name = channel_names[idx]
             ch = create_channel(token, guild_id, name)
             if ch:
-                print(f"[+] Created #{name}")
+                print(t("nuke_created", lang, name=name))
                 wh = create_webhook(token, ch["id"], "alex_raid")
                 if wh:
-                    print(f"[+] Webhook in #{name}")
-                    t = threading.Thread(target=spam_webhook, args=(wh, spam_content), daemon=True)
-                    t.start()
-                    spam_threads.append(t)
+                    print(t("nuke_webhook", lang, name=name))
+                    tt = threading.Thread(target=spam_webhook, args=(wh, spam_content), daemon=True)
+                    tt.start()
+                    spam_threads.append(tt)
 
     dt = threading.Thread(target=delete_all_channels, daemon=True)
     dt.start()
@@ -846,9 +872,9 @@ def nuke_server(token, guild_id, ad_invite, rpc_name):
     dt.join()
     for w in workers:
         w.join()
-    for t in spam_threads:
-        t.join()
-    print("[+] Nuke completed")
+    for tt in spam_threads:
+        tt.join()
+    print(t("nuke_done", lang))
 
 
 # ─── ASSETS ──────────────────────────────────────────────────────────────────
@@ -913,14 +939,6 @@ def load_custom_statuses():
         return []
 
 
-def load_nhay():
-    try:
-        with open("nhay.txt", "r", encoding="utf-8") as f:
-            return [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        return []
-
-
 # ─── ACTIVITY BUILDER ────────────────────────────────────────────────────────
 
 def build_activity_from_slot(sc, slot, app_id, asset_cache, start_time, rpc_type=2, rpc_name="Nova", token_index=1):
@@ -942,12 +960,10 @@ def build_activity_from_slot(sc, slot, app_id, asset_cache, start_time, rpc_type
     btn2_label = replace_placeholders(get("button2_label"))
     btn2_url   = get("button2_url")
 
-    start_ms = (start_time or int(time.time())) * 1000
-
     activity = {
         "type": rpc_type,
         "name": rpc_name,
-        "timestamps": {"start": start_ms},
+        "timestamps": {"start": start_time},
     }
 
     if rpc_type == 2:
@@ -1017,13 +1033,13 @@ def nhay_loop(token, channel_id, target_user_ids, nhay_lines, stop_event):
         random_line = random.choice(nhay_lines)
         mentions = " ".join([f"<@{uid}>" for uid in target_user_ids])
         send_message(token, channel_id, f"{random_line} {mentions}")
-        stop_event.wait(random.uniform(1, 2))
+        stop_event.wait(random.uniform(1, 3))
 
 
-def spam_loop(token, channel_id, text, count, delay=0.7):
+def spam_loop(token, channel_id, text, count):
     for _ in range(count):
         send_message(token, channel_id, text)
-        time.sleep(delay)
+        time.sleep(0.7)
 
 
 # ─── AFK HELPERS ─────────────────────────────────────────────────────────────
@@ -1039,22 +1055,22 @@ def _format_duration(seconds, lang="en"):
         return f"{s} giây"
     else:
         if m and s:
-            return f"{m} min and {s} sec"
+            return f"{m} minute(s) and {s} second(s)"
         if m:
-            return f"{m} min"
-        return f"{s} sec"
+            return f"{m} minute(s)"
+        return f"{s} second(s)"
 
 
 def build_afk_summary(display_name, duration, pings, lang="en"):
     dur_text = _format_duration(duration, lang)
 
     lines = [
-        tr(lang, "afk_welcome", name=display_name, dur=dur_text, n=len(pings)),
+        t("afk_summary_header", lang, name=display_name, duration=dur_text, n=len(pings)),
     ]
 
     if pings:
         lines.append("")
-        lines.append(tr(lang, "afk_pings_header"))
+        lines.append(t("afk_pings_section", lang))
         for p in pings:
             lines.append(f"**{p['author']}**")
             lines.append(p["jump_url"])
@@ -1071,8 +1087,6 @@ def is_user_mention_of(mentions, my_id):
         if m.get("username") is not None or m.get("discriminator") is not None:
             return True
     return False
-
-
 # ─── GATEWAY ─────────────────────────────────────────────────────────────────
 
 class DiscordGateway:
@@ -1081,8 +1095,8 @@ class DiscordGateway:
                  asset_cache=None, start_time=None,
                  auto_join_voice=False, guild_id=None, voice_channel_id=None,
                  fakelive=False, rpc_type=2, rpc_name="Nova", token_index=1,
-                 commands_enabled=True, stream_rotate_delay=5,
-                 language="en"):
+                 commands_enabled=True, lang="en",
+                 auto_react=False, auto_react_emojis=None, auto_react_target=None):
         self.token            = token
         self.user_id          = user_id
         self.account_name     = account_name
@@ -1091,7 +1105,7 @@ class DiscordGateway:
         self.app_id           = app_id
         self.auto_change_stream = auto_change_stream
         self.asset_cache      = asset_cache or {}
-        self.start_time       = start_time if start_time else int(time.time())
+        self.start_time       = start_time if start_time else int(time.time() * 1000)
         self.ws               = None
         self.heartbeat_interval = None
         self.sequence         = None
@@ -1104,8 +1118,7 @@ class DiscordGateway:
         self.rpc_name         = rpc_name
         self.token_index      = token_index
         self.commands_enabled = commands_enabled
-        self.stream_rotate_delay = max(1, int(stream_rotate_delay))
-        self.language         = language if language in ("en", "vi") else "en"
+        self.lang             = lang if lang in SUPPORTED_LANGS else DEFAULT_LANG
         # Farm
         self.farm_stop_event  = None
         self.farm_thread      = None
@@ -1123,7 +1136,7 @@ class DiscordGateway:
         # Fake live
         self.fakelive = fakelive
         # Nhay
-        self.nhay_lines      = load_nhay()
+        self.nhay_lines      = load_nhay(token_index)
         self.nhay_stop_event = None
         self.nhay_thread     = None
         self.nhay_channel    = None
@@ -1139,16 +1152,31 @@ class DiscordGateway:
         self.afk_pings       = []
         self.afk_auto_reply  = True
         self.afk_auto_reply_msg_id = None
+        # AFK cooldown
+        self.afk_user_cd     = {}
+        self.afk_channel_cd  = {}
+        self.afk_global_cd   = 0.0
+        self.afk_pending     = {}
+        self.afk_lock        = threading.Lock()
         # Ping
         self.last_hb_sent    = 0.0
         self.last_hb_ack     = 0.0
-        # Online member tracking (presences)
+        # Online member tracking
         self.guild_online    = {}
         self.guild_bot_ids   = {}
         self.guild_bot_ts    = {}
         # User cache
         self.user_cache      = {}
+        # Auto react
+        self.auto_react        = auto_react
+        self.auto_react_emojis = auto_react_emojis or ["👀", "🔥"]
+        self.auto_react_target = auto_react_target or {"mode": "all"}
 
+    # ─── SHORTCUT ─────────────────────────────────────────────────────────
+    def t(self, key, **kwargs):
+        return t(key, self.lang, **kwargs)
+
+    # ─── LIFECYCLE ────────────────────────────────────────────────────────
     def start(self):
         threading.Thread(target=self._run, daemon=True).start()
         if self.auto_change_stream and self.stream_config:
@@ -1161,7 +1189,7 @@ class DiscordGateway:
 
     def _stream_rotate_loop(self):
         while self.running:
-            time.sleep(self.stream_rotate_delay)
+            time.sleep(5)
             if not self.running:
                 break
             with self.stream_lock:
@@ -1235,6 +1263,7 @@ class DiscordGateway:
             }
         }))
 
+    # ─── VOICE ────────────────────────────────────────────────────────────
     def _auto_join_voice(self):
         if not self.auto_join_voice:
             return
@@ -1243,8 +1272,8 @@ class DiscordGateway:
             for v in self.voice_channels:
                 if not self.running:
                     return
-                guild_id   = v["guild_id"]
-                channel_id = v["channel_id"]
+                gid = v["guild_id"]
+                cid = v["channel_id"]
                 try:
                     time.sleep(2)
                     if not self.ws or not self.running:
@@ -1252,21 +1281,21 @@ class DiscordGateway:
                     self.ws.send(json.dumps({
                         "op": 4,
                         "d": {
-                            "guild_id": guild_id,
-                            "channel_id": channel_id,
+                            "guild_id": gid,
+                            "channel_id": cid,
                             "self_mute": True,
                             "self_deaf": True,
                         }
                     }))
                     if v not in self.current_voice_list:
                         self.current_voice_list.append(v)
-                    print(f"[+] [{self.account_name}] Auto joined voice: {channel_id} ({guild_id})")
+                    print(f"[+] [{self.account_name}] Auto joined voice: {cid} ({gid})")
                     if self.fakelive:
                         time.sleep(3)
-                        self.start_fake_live(guild_id, channel_id)
+                        self.start_fake_live(gid, cid)
                         time.sleep(3)
                 except Exception as e:
-                    print(f"[!] [{self.account_name}] Auto join failed {channel_id}: {e}")
+                    print(f"[!] [{self.account_name}] Auto join failed {cid}: {e}")
 
         threading.Thread(target=_join_all_sequential, daemon=True).start()
 
@@ -1298,6 +1327,67 @@ class DiscordGateway:
         except Exception:
             pass
 
+    # ─── AFK ──────────────────────────────────────────────────────────────
+    def _afk_do_reply(self, uid, channel_id, jump_url, display_name):
+        with self.afk_lock:
+            now = time.time()
+            if not self.afk_enabled:
+                self.afk_pending.pop(uid, None)
+                return
+            if self.afk_user_cd.get(uid, 0) > now:
+                self.afk_pending.pop(uid, None)
+                return
+
+        reason_part = f": **{self.afk_message}**" if self.afk_message else ""
+        reply_text = self.t("afk_reply",
+                            name=self.account_name,
+                            ts=self.afk_start_time,
+                            reason=reason_part)
+
+        msg_id = send_message(self.token, channel_id, reply_text)
+
+        with self.afk_lock:
+            now = time.time()
+            self.afk_auto_reply_msg_id = msg_id
+            self.afk_user_cd[uid]       = now + random.uniform(1, 5)
+            self.afk_channel_cd[channel_id] = now + random.uniform(1, 5)
+            self.afk_global_cd          = now + random.uniform(1, 5)
+            self.afk_pending.pop(uid, None)
+
+    def _afk_handle_ping(self, uid, channel_id, jump_url, display_name):
+        with self.afk_lock:
+            now = time.time()
+
+            if self.afk_user_cd.get(uid, 0) > now:
+                return
+
+            if uid in self.afk_pending:
+                try:
+                    self.afk_pending[uid].cancel()
+                except Exception:
+                    pass
+                self.afk_pending.pop(uid, None)
+
+            delay = random.uniform(1, 5)
+            timer = threading.Timer(
+                delay,
+                self._afk_do_reply,
+                args=(uid, channel_id, jump_url, display_name)
+            )
+            timer.daemon = True
+            self.afk_pending[uid] = timer
+            timer.start()
+
+    def _afk_cancel_all_timers(self):
+        with self.afk_lock:
+            for t in self.afk_pending.values():
+                try:
+                    t.cancel()
+                except Exception:
+                    pass
+            self.afk_pending.clear()
+
+    # ─── EVENT HANDLER ────────────────────────────────────────────────────
     def _handle_event(self, data):
         event = data.get("t")
         d = data.get("d")
@@ -1438,11 +1528,9 @@ class DiscordGateway:
             msg_content = d.get("content", "")
             msg_author  = d.get("author", {})
             msg_id      = d.get("id", "")
-            L = self.language
 
             if msg_author.get("id"):
                 self.user_cache[str(msg_author["id"])] = msg_author
-
             for m in d.get("mentions", []) or []:
                 if m.get("id"):
                     self.user_cache[str(m["id"])] = m
@@ -1460,6 +1548,39 @@ class DiscordGateway:
                     "author_id": msg_author.get("id", "0"),
                     "timestamp": d.get("timestamp", ""),
                 }
+
+            # ─── AUTO REACT ─────────────────────────────────────────────
+            if (self.auto_react
+                    and not msg_author.get("bot", False)
+                    and msg_channel
+                    and msg_id
+                    and self.auto_react_emojis):
+                should_react = False
+                target = self.auto_react_target or {"mode": "all"}
+                sender_id = msg_author.get("id", "")
+                mode = target.get("mode", "all")
+
+                if mode == "all":
+                    should_react = True
+                elif mode == "user":
+                    if str(sender_id) in [str(x) for x in target.get("ids", [])]:
+                        should_react = True
+                elif mode == "reply":
+                    ref = d.get("referenced_message") or {}
+                    ref_author_id = (ref.get("author") or {}).get("id")
+                    if str(ref_author_id) == str(self.user_id):
+                        should_react = True
+
+                if should_react:
+                    def _react_all(tk, ch, mid, emojis):
+                        for e in emojis:
+                            add_reaction(tk, ch, mid, e)
+                            time.sleep(0.4)
+                    threading.Thread(
+                        target=_react_all,
+                        args=(self.token, msg_channel, msg_id, list(self.auto_react_emojis)),
+                        daemon=True
+                    ).start()
 
             # ─── AFK ────────────────────────────────────────────────────
             if self.afk_enabled:
@@ -1495,13 +1616,8 @@ class DiscordGateway:
                     print(f"[AFK] {display_name} ping {self.account_name} -> {jump_url}")
 
                     if self.afk_auto_reply:
-                        reason_part = f": **{self.afk_message}**" if self.afk_message else ""
-                        reply_text  = tr(L, "afk_reply",
-                                         name=self.account_name,
-                                         ts=self.afk_start_time,
-                                         reason=reason_part)
-                        self.afk_auto_reply_msg_id = send_message(
-                            self.token, msg_channel, reply_text
+                        self._afk_handle_ping(
+                            sender_id, msg_channel, jump_url, display_name
                         )
 
             if author.get("id") != self.user_id:
@@ -1525,7 +1641,13 @@ class DiscordGateway:
                 self.afk_pings             = []
                 self.afk_auto_reply_msg_id = None
 
-                summary = build_afk_summary(display, duration, pings_copy, L)
+                with self.afk_lock:
+                    self.afk_user_cd.clear()
+                    self.afk_channel_cd.clear()
+                    self.afk_global_cd = 0.0
+                self._afk_cancel_all_timers()
+
+                summary = build_afk_summary(display, duration, pings_copy, self.lang)
                 send_message(self.token, channel_id, summary)
 
             if not self.commands_enabled:
@@ -1534,43 +1656,44 @@ class DiscordGateway:
             # ─── COMMANDS ────────────────────────────────────────────────
 
             if content == "$menu":
-                edit_message(self.token, channel_id, message_id, (
-                    f"## {tr(L, 'menu_title')} - {self.rpc_name}\n\n"
-                    f"**{tr(L, 'cmd_header')}** :\n"
-                    f"`$farm` : {tr(L, 'desc_farm')}\n"
-                    f"`$nhay @user1 @user2 ...` : {tr(L, 'desc_nhay')}\n"
-                    f"`$spam <count> <content> [delay]` : {tr(L, 'desc_spam')}\n"
-                    f"`$dm <user_id> <content>` : {tr(L, 'desc_dm')}\n"
-                    f"`$nuke [invite]` : {tr(L, 'desc_nuke')}\n"
-                    f"`$purge [count]` : {tr(L, 'desc_purge')}\n"
-                    f"`$afk [message]` : {tr(L, 'desc_afk')}\n"
-                    f"`$snipe [@user] [count]` : {tr(L, 'desc_snipe')}\n"
-                    f"`$log [@user] [count]` : {tr(L, 'desc_log')}\n"
-                    f"`$guilds` : {tr(L, 'desc_guilds')}\n\n"
-                    f"**{tr(L, 'info_header')}** :\n"
-                    f"`$userinfo [@user|id]` : {tr(L, 'desc_userinfo')}\n"
-                    f"`$guild` : {tr(L, 'desc_guild')}\n"
-                    f"`$id [@user|#channel|@role]` : {tr(L, 'desc_id')}\n"
-                    f"`$av [@user|id]` : {tr(L, 'desc_av')}\n"
-                    f"`$banner [@user|id]` : {tr(L, 'desc_banner')}\n"
-                    f"`$ping` : {tr(L, 'desc_ping')}\n\n"
-                    f"**{tr(L, 'misc_header')}** :\n"
-                    f"`$nick <name>` : {tr(L, 'desc_nick')}\n"
-                    f"`$language <en|vi>` : {tr(L, 'desc_language')}\n\n"
+                menu = (
+                    f"{self.t('menu_title', name=self.rpc_name)}\n\n"
+                    f"{self.t('menu_commands_header')}\n"
+                    f"`$farm` : Spam messages for exp bots\n"
+                    f"`$nhay @user1 @user2 ...` : Spam tag multiple users (toggle)\n"
+                    f"`$spam <count> <content>` : Spam the content N times\n"
+                    f"`$dm <user_id> <content>` : Send a DM\n"
+                    f"`$nuke <invite>` : Nuke the server\n"
+                    f"`$purge [count]` : Delete your own messages (default 10)\n"
+                    f"`$afk [message]` : Toggle AFK — track pings on return\n"
+                    f"`$snipe [@user] [count]` : View deleted messages\n"
+                    f"`$log [@user] [count]` : View message edit history\n"
+                    f"`$guilds` : List servers you are in\n\n"
+                    f"{self.t('menu_info_header')}\n"
+                    f"`$userinfo [@user|id]` : User info — DM OK\n"
+                    f"`$guild` : Current guild info\n"
+                    f"`$id [@user|#channel|@role]` : Resolve ID\n"
+                    f"`$av [@user|id]` : Avatar URL — DM OK\n"
+                    f"`$ping` : Gateway latency\n\n"
+                    f"{self.t('menu_other_header')}\n"
+                    f"`$nick <name>` : Change nickname in this server\n"
+                    f"`$language <en|vi>` : Change bot language\n\n"
                     f"<@{self.user_id}>"
-                ))
+                )
+                edit_message(self.token, channel_id, message_id, menu)
 
             elif content.startswith("$language"):
                 parts = content.split(maxsplit=1)
-                arg = parts[1].strip().lower() if len(parts) > 1 else ""
-                if not arg:
-                    edit_message(self.token, channel_id, message_id, tr(L, "lang_usage"))
-                elif arg in ("en", "vi"):
-                    self.language = arg
-                    edit_message(self.token, channel_id, message_id,
-                                 tr(arg, "lang_set", lang=arg.upper()))
+                if len(parts) < 2 or not parts[1].strip():
+                    msg = self.t("lang_current", lang=SUPPORTED_LANGS.get(self.lang, self.lang))
                 else:
-                    edit_message(self.token, channel_id, message_id, tr(L, "lang_invalid"))
+                    code = parts[1].strip().lower()
+                    if code in SUPPORTED_LANGS:
+                        self.lang = code
+                        msg = self.t("lang_changed", lang=SUPPORTED_LANGS[code])
+                    else:
+                        msg = self.t("lang_invalid", code=code)
+                edit_message(self.token, channel_id, message_id, msg)
 
             elif content == "$nhay" or content.startswith("$nhay "):
                 delete_message(self.token, channel_id, message_id)
@@ -1581,14 +1704,14 @@ class DiscordGateway:
                     self.nhay_thread = None
                     self.nhay_channel = None
                     self.nhay_targets = []
-                    print(f"[+] [{self.account_name}] Stopped Nhay")
+                    send_message(self.token, channel_id, self.t("nhay_stopped"))
                     return
                 mentions = re.findall(r"<@!?(\d+)>", content)
                 if not mentions:
-                    print(f"[!] [{self.account_name}] $nhay: no user mentioned")
+                    send_message(self.token, channel_id, self.t("nhay_no_mention"))
                     return
                 if not self.nhay_lines:
-                    print(f"[!] [{self.account_name}] nhay.txt is empty or not found")
+                    send_message(self.token, channel_id, self.t("nhay_no_lines"))
                     return
                 self.nhay_stop_event = threading.Event()
                 self.nhay_channel    = channel_id
@@ -1600,7 +1723,7 @@ class DiscordGateway:
                 )
                 self.nhay_thread.start()
                 targets_str = " ".join([f"<@{uid}>" for uid in mentions])
-                print(f"[+] [{self.account_name}] Started Nhay -> {targets_str}")
+                send_message(self.token, channel_id, self.t("nhay_started", targets=targets_str))
 
             elif content == "$farm":
                 delete_message(self.token, channel_id, message_id)
@@ -1610,7 +1733,7 @@ class DiscordGateway:
                     self.farm_stop_event = None
                     self.farm_thread = None
                     self.farm_channel = None
-                    print(f"[+] [{self.account_name}] Stopped Farm")
+                    send_message(self.token, channel_id, self.t("farm_stopped"))
                 else:
                     self.farm_stop_event = threading.Event()
                     self.farm_channel    = channel_id
@@ -1620,63 +1743,56 @@ class DiscordGateway:
                         daemon=True
                     )
                     self.farm_thread.start()
-                    print(f"[+] [{self.account_name}] Started Farm")
+                    send_message(self.token, channel_id, self.t("farm_started"))
 
             elif content.startswith("$spam "):
                 delete_message(self.token, channel_id, message_id)
-                rest = content[len("$spam "):].strip()
-                m = re.match(r"^(\d+)\s+(.+?)(?:\s+(\d+(?:\.\d+)?\s*[smhd]?))?$", rest)
-                if not m:
-                    print(f"[!] {tr(L, 'err_spam_usage')}")
+                parts = content.split(" ", 2)
+                if len(parts) < 3:
+                    send_message(self.token, channel_id, self.t("spam_usage"))
                     return
                 try:
-                    count = int(m.group(1))
+                    count = int(parts[1])
                     count = max(1, min(count, 100))
                 except ValueError:
-                    print(f"[!] {tr(L, 'err_spam_count')}")
+                    send_message(self.token, channel_id, self.t("spam_invalid"))
                     return
-                spam_text = m.group(2).strip()
-                delay_raw = m.group(3)
-                if delay_raw:
-                    parsed = parse_duration(delay_raw, default=None)
-                    if parsed is None:
-                        print(f"[!] {tr(L, 'err_spam_delay')}")
-                        return
-                    delay = parsed
-                else:
-                    delay = 0.7
+                spam_text = parts[2]
                 threading.Thread(
                     target=spam_loop,
-                    args=(self.token, channel_id, spam_text, count, delay),
+                    args=(self.token, channel_id, spam_text, count),
                     daemon=True
                 ).start()
-                print(f"[+] [{self.account_name}] Spam {count}x delay={delay}s")
 
             elif content.startswith("$dm "):
                 delete_message(self.token, channel_id, message_id)
                 parts = content.split(" ", 2)
                 if len(parts) < 3:
-                    print(f"[!] {tr(L, 'err_dm_usage')}")
+                    send_message(self.token, channel_id, self.t("dm_usage"))
                     return
                 try:
                     target_uid = int(parts[1])
                 except ValueError:
-                    print(f"[!] {tr(L, 'err_dm_invalid')}")
+                    send_message(self.token, channel_id, self.t("dm_invalid"))
                     return
                 dm_text = parts[2]
-                def _do_dm(tk, uid, txt):
+                def _do_dm(tk, uid, txt, ch, lang):
                     dm_ch = create_dm(tk, uid)
                     if dm_ch:
                         send_message(tk, dm_ch, txt)
-                        print(f"[+] DM sent to {uid}")
+                        send_message(tk, ch, t("dm_sent", lang, uid=uid))
                     else:
-                        print(f"[!] {tr(L, 'err_dm_fail', uid=uid)}")
-                threading.Thread(target=_do_dm, args=(self.token, target_uid, dm_text), daemon=True).start()
+                        send_message(tk, ch, t("dm_fail", lang, uid=uid))
+                threading.Thread(
+                    target=_do_dm,
+                    args=(self.token, target_uid, dm_text, channel_id, self.lang),
+                    daemon=True
+                ).start()
 
             elif content == "$guilds":
                 guilds = get_self_guilds(self.token)
                 if not guilds:
-                    edit_message(self.token, channel_id, message_id, tr(L, "err_no_guilds"))
+                    edit_message(self.token, channel_id, message_id, "❌")
                     return
                 lines = [f"**{g.get('name', '?')}** — `{g.get('id')}`" for g in guilds]
                 text = "\n".join(lines)
@@ -1698,7 +1814,7 @@ class DiscordGateway:
                 def _do_av(tk, uid, ch, mid, gid, cid, uc, lang):
                     info = resolve_user_info(tk, uid, guild_id=gid, channel_id=cid, user_cache=uc)
                     if not info:
-                        edit_message(tk, ch, mid, tr(lang, "err_av_fail", uid=uid))
+                        edit_message(tk, ch, mid, t("av_fail", lang, uid=uid))
                         return
                     url = build_avatar_url(uid, info.get("avatar"))
                     edit_message(tk, ch, mid, url)
@@ -1706,55 +1822,31 @@ class DiscordGateway:
                 threading.Thread(
                     target=_do_av,
                     args=(self.token, target_uid, channel_id, message_id,
-                          guild_id, channel_id, self.user_cache, L),
-                    daemon=True
-                ).start()
-
-            elif content.startswith("$banner"):
-                parts = content.split()
-                target_uid = None
-                if len(parts) >= 2:
-                    m = re.search(r"(\d+)", parts[1])
-                    if m:
-                        target_uid = m.group(1)
-                if not target_uid:
-                    target_uid = self.user_id
-
-                def _do_banner(tk, uid, ch, mid, gid, cid, uc, lang):
-                    info = resolve_user_info(tk, uid, guild_id=gid, channel_id=cid, user_cache=uc)
-                    if not info:
-                        edit_message(tk, ch, mid, tr(lang, "err_banner_fail", uid=uid))
-                        return
-                    url = build_banner_url(uid, info.get("banner"))
-                    if not url:
-                        edit_message(tk, ch, mid, tr(lang, "err_no_banner", uid=uid))
-                        return
-                    edit_message(tk, ch, mid, url)
-
-                threading.Thread(
-                    target=_do_banner,
-                    args=(self.token, target_uid, channel_id, message_id,
-                          guild_id, channel_id, self.user_cache, L),
+                          guild_id, channel_id, self.user_cache, self.lang),
                     daemon=True
                 ).start()
 
             elif content.startswith("$nick "):
                 delete_message(self.token, channel_id, message_id)
                 if not guild_id:
-                    print(f"[!] {tr(L, 'err_nick_dm')}")
+                    send_message(self.token, channel_id, self.t("nick_dm_only"))
                     return
                 new_nick = content[len("$nick "):].strip()
-                def _do_nick(tk, gid, nick):
+                def _do_nick(tk, gid, nick, ch, lang):
                     ok = change_nick(tk, gid, nick)
-                    print(f"[+] Nick change {'OK' if ok else 'FAIL'}")
-                threading.Thread(target=_do_nick, args=(self.token, guild_id, new_nick), daemon=True).start()
+                    send_message(tk, ch, t("nick_ok", lang) if ok else t("nick_fail", lang))
+                threading.Thread(
+                    target=_do_nick,
+                    args=(self.token, guild_id, new_nick, channel_id, self.lang),
+                    daemon=True
+                ).start()
 
             elif content == "$ping":
                 ping_ms = self._get_ping_ms()
                 if ping_ms < 0:
-                    msg = tr(L, "ping_wait")
+                    msg = self.t("ping_wait")
                 else:
-                    msg = tr(L, "ping_ok", ms=ping_ms)
+                    msg = self.t("ping_ok", ms=ping_ms)
                 edit_message(self.token, channel_id, message_id, msg)
 
             elif content.startswith("$id"):
@@ -1766,7 +1858,7 @@ class DiscordGateway:
 
                 if not target:
                     result_id = channel_id
-                    kind = tr(L, "id_chan_current")
+                    kind = "channel"
                 else:
                     m_role = re.match(r"<@&(\d+)>", target)
                     m_user = re.match(r"<@!?(\d+)>", target)
@@ -1774,18 +1866,18 @@ class DiscordGateway:
                     m_num  = re.match(r"^(\d+)$", target)
 
                     if m_role:
-                        result_id = m_role.group(1); kind = tr(L, "id_kind_role")
+                        result_id = m_role.group(1); kind = "role"
                     elif m_chan:
-                        result_id = m_chan.group(1); kind = tr(L, "id_kind_channel")
+                        result_id = m_chan.group(1); kind = "channel"
                     elif m_user:
-                        result_id = m_user.group(1); kind = tr(L, "id_kind_user")
+                        result_id = m_user.group(1); kind = "user"
                     elif m_num:
-                        result_id = m_num.group(1); kind = tr(L, "id_kind_id")
+                        result_id = m_num.group(1); kind = "id"
 
                 if result_id:
                     edit_message(self.token, channel_id, message_id, f"`{kind}` → `{result_id}`")
                 else:
-                    edit_message(self.token, channel_id, message_id, tr(L, "err_id_unknown"))
+                    edit_message(self.token, channel_id, message_id, self.t("id_invalid"))
 
             elif content.startswith("$userinfo"):
                 parts = content.split(maxsplit=1)
@@ -1798,58 +1890,58 @@ class DiscordGateway:
                 def _do_userinfo(tk, uid, ch, mid, gid, cid, uc, lang):
                     info = resolve_user_info(tk, uid, guild_id=gid, channel_id=cid, user_cache=uc)
                     if not info:
-                        edit_message(tk, ch, mid, tr(lang, "err_userinfo_fail", uid=uid))
+                        edit_message(tk, ch, mid, t("userinfo_fail", lang, uid=uid))
                         return
 
                     mem = info.pop("_member", None)
 
                     lines = [
-                        tr(lang, "user_info_header"),
-                        tr(lang, "u_username", v=info.get("username", "?")),
-                        tr(lang, "u_display", v=info.get("global_name") or tr(lang, "u_none")),
-                        tr(lang, "u_id", v=uid),
-                        tr(lang, "u_bot", v=("✅" if info.get("bot") else "❌")),
-                        tr(lang, "u_created", v=snowflake_to_str(uid)),
+                        f"**User Info**",
+                        f"**Username:** `{info.get('username', '?')}`",
+                        f"**Display name:** {info.get('global_name') or '*(none)*'}",
+                        f"**ID:** `{uid}`",
+                        f"**Bot:** {'✅' if info.get('bot') else '❌'}",
+                        f"**Created:** {snowflake_to_str(uid)}",
                     ]
                     av_url = build_avatar_url(uid, info.get("avatar"))
-                    lines.append(tr(lang, "u_avatar", v=av_url))
-                    banner_url = build_banner_url(uid, info.get("banner"))
-                    if banner_url:
-                        lines.append(tr(lang, "u_banner", v=banner_url))
+                    lines.append(f"**Avatar:** {av_url}")
+                    if info.get("banner"):
+                        ext = "gif" if info["banner"].startswith("a_") else "png"
+                        lines.append(f"**Banner:** https://cdn.discordapp.com/banners/{uid}/{info['banner']}.{ext}?size=1024")
                     if info.get("accent_color"):
-                        lines.append(tr(lang, "u_accent", v=f"{info['accent_color']:06x}"))
+                        lines.append(f"**Accent color:** `#{info['accent_color']:06x}`")
 
                     if mem is None and gid:
                         mem = get_guild_member(tk, gid, uid)
 
                     if mem:
                         if mem.get("nick"):
-                            lines.append(tr(lang, "u_nick", v=mem["nick"]))
+                            lines.append(f"**Nickname:** {mem['nick']}")
                         if mem.get("joined_at"):
-                            lines.append(tr(lang, "u_join", v=iso_to_str(mem["joined_at"])))
+                            lines.append(f"**Joined:** {iso_to_str(mem['joined_at'])}")
                         roles = mem.get("roles", [])
                         if roles:
                             role_str = " ".join([f"<@&{r}>" for r in roles[:20]])
-                            lines.append(tr(lang, "u_roles", n=len(roles), v=role_str))
+                            lines.append(f"**Roles ({len(roles)}):** {role_str}")
 
                     edit_message(tk, ch, mid, "\n".join(lines))
 
                 threading.Thread(
                     target=_do_userinfo,
                     args=(self.token, target_uid, channel_id, message_id,
-                          guild_id, channel_id, self.user_cache, L),
+                          guild_id, channel_id, self.user_cache, self.lang),
                     daemon=True
                 ).start()
 
             elif content == "$guild":
                 if not guild_id:
-                    edit_message(self.token, channel_id, message_id, tr(L, "err_guild_dm"))
+                    edit_message(self.token, channel_id, message_id, self.t("guild_only"))
                     return
 
                 def _do_guild(tk, gid, ch, mid, gw_self, lang):
                     info = get_guild_info(tk, gid)
                     if not info:
-                        edit_message(tk, ch, mid, tr(lang, "err_guild_fail", gid=gid))
+                        edit_message(tk, ch, mid, t("guild_fail", lang, gid=gid))
                         return
 
                     online_set = gw_self.guild_online.get(gid, set())
@@ -1864,54 +1956,51 @@ class DiscordGateway:
                     online_humans = len(online_set - bot_ids)
                     approx_total = info.get("approximate_presence_count", "?")
                     if not online_set and isinstance(approx_total, int) and approx_total > 0:
-                        online_line = tr(lang, "g_online_unknown")
+                        online_line = f"**Online member:** `?` *(no presence data - large guild)*"
                     else:
-                        online_line = tr(lang, "g_online_count", v=online_humans)
+                        online_line = f"**Online member:** {online_humans}"
 
                     lines = [
-                        tr(lang, "guild_info"),
-                        tr(lang, "g_name", v=info.get("name", "?")),
-                        tr(lang, "g_id", v=gid),
-                        tr(lang, "g_owner", v=info.get("owner_id", "?")),
-                        tr(lang, "g_created", v=snowflake_to_str(gid)),
-                        tr(lang, "g_members", v=info.get("approximate_member_count", "?")),
-                        tr(lang, "g_online", v=info.get("approximate_presence_count", "?")),
+                        f"**Guild Info**",
+                        f"**Name:** {info.get('name', '?')}",
+                        f"**ID:** `{gid}`",
+                        f"**Owner ID:** `{info.get('owner_id', '?')}`",
+                        f"**Created:** {snowflake_to_str(gid)}",
+                        f"**Members:** {info.get('approximate_member_count', '?')}",
+                        f"**Online:** {info.get('approximate_presence_count', '?')}",
                         online_line,
-                        tr(lang, "g_boost", tier=info.get("premium_tier", 0),
-                           n=info.get("premium_subscription_count", 0)),
-                        tr(lang, "g_region", v=info.get("region", "?")),
-                        tr(lang, "g_verif", v=info.get("verification_level", "?")),
+                        f"**Boost tier:** {info.get('premium_tier', 0)} ({info.get('premium_subscription_count', 0)} boost)",
+                        f"**Region:** {info.get('region', '?')}",
+                        f"**Verification level:** {info.get('verification_level', '?')}",
                     ]
                     if info.get("icon"):
                         ext = "gif" if info["icon"].startswith("a_") else "png"
-                        lines.append(tr(lang, "g_icon",
-                                         v=f"https://cdn.discordapp.com/icons/{gid}/{info['icon']}.{ext}?size=1024"))
+                        lines.append(f"**Icon:** https://cdn.discordapp.com/icons/{gid}/{info['icon']}.{ext}?size=1024")
                     if info.get("banner"):
                         ext = "gif" if info["banner"].startswith("a_") else "png"
-                        lines.append(tr(lang, "g_banner",
-                                         v=f"https://cdn.discordapp.com/banners/{gid}/{info['banner']}.{ext}?size=1024"))
+                        lines.append(f"**Banner:** https://cdn.discordapp.com/banners/{gid}/{info['banner']}.{ext}?size=1024")
                     if info.get("vanity_url_code"):
-                        lines.append(tr(lang, "g_vanity", v=info["vanity_url_code"]))
+                        lines.append(f"**Vanity:** discord.gg/{info['vanity_url_code']}")
                     feats = info.get("features", [])
                     if feats:
-                        lines.append(tr(lang, "g_features", v=", ".join(feats[:10])))
+                        lines.append(f"**Features:** {', '.join(feats[:10])}")
 
                     edit_message(tk, ch, mid, "\n".join(lines))
 
                 threading.Thread(
                     target=_do_guild,
-                    args=(self.token, guild_id, channel_id, message_id, self, L),
+                    args=(self.token, guild_id, channel_id, message_id, self, self.lang),
                     daemon=True
                 ).start()
 
             elif content.startswith("$nuke "):
                 delete_message(self.token, channel_id, message_id)
                 if not guild_id:
-                    print("Cannot nuke in DM")
+                    send_message(self.token, channel_id, self.t("nuke_no_dm"))
                     return
                 parts = content.split(" ", 1)
                 if len(parts) < 2 or not parts[1].strip():
-                    print("Cannot find invite")
+                    send_message(self.token, channel_id, self.t("nuke_no_invite"))
                     return
                 invite_input = parts[1].strip()
                 invite_code  = (invite_input
@@ -1919,17 +2008,17 @@ class DiscordGateway:
                                 .replace("https://discord.com/invite/", "")
                                 .replace("discord.gg/", ""))
                 if not resolve_invite(self.token, invite_code):
-                    print(f"Cannot find invite {invite_input}")
+                    send_message(self.token, channel_id, self.t("nuke_bad_invite", invite=invite_input))
                     return
                 channels = get_guild_channels(self.token, guild_id)
                 if channels is None:
-                    print("Cannot access this server (missing permissions)")
+                    send_message(self.token, channel_id, self.t("nuke_no_perm"))
                     return
                 guild_name = get_guild_name(self.token, guild_id)
-                print(f"[+] Nuking {guild_name} ({guild_id})")
+                send_message(self.token, channel_id, self.t("nuke_starting", guild=guild_name, gid=guild_id))
                 threading.Thread(
                     target=nuke_server,
-                    args=(self.token, guild_id, f"https://discord.gg/{invite_code}", self.rpc_name),
+                    args=(self.token, guild_id, f"https://discord.gg/{invite_code}", self.rpc_name, self.lang),
                     daemon=True
                 ).start()
 
@@ -1941,10 +2030,15 @@ class DiscordGateway:
                     count = max(1, min(count, 200))
                 except ValueError:
                     count = 10
-                def _do_purge(ch, uid, n):
-                    deleted = purge_messages(self.token, ch, uid, n)
-                    print(f"[+] [{self.account_name}] Purged {deleted} messages")
-                threading.Thread(target=_do_purge, args=(channel_id, self.user_id, count), daemon=True).start()
+                def _do_purge(ch, uid, n, tk, lang):
+                    send_message(tk, ch, t("purge_started", lang, n=n))
+                    deleted = purge_messages(tk, ch, uid, n)
+                    send_message(tk, ch, t("purge_done", lang, n=deleted))
+                threading.Thread(
+                    target=_do_purge,
+                    args=(channel_id, self.user_id, count, self.token, self.lang),
+                    daemon=True
+                ).start()
 
             elif content.startswith("$afk"):
                 parts  = content.split(" ", 1)
@@ -1954,9 +2048,12 @@ class DiscordGateway:
                 self.afk_start_time = int(time.time())
                 self.afk_pings      = []
                 self.afk_auto_reply_msg_id = None
+                with self.afk_lock:
+                    self.afk_user_cd.clear()
+                    self.afk_channel_cd.clear()
+                    self.afk_global_cd = 0.0
                 preview = f" ({reason})" if reason else ""
-                edit_message(self.token, channel_id, message_id,
-                             tr(L, "afk_on", preview=preview))
+                edit_message(self.token, channel_id, message_id, self.t("afk_on", preview=preview))
                 threading.Thread(
                     target=lambda: (time.sleep(3), delete_message(self.token, channel_id, message_id)),
                     daemon=True
@@ -1973,16 +2070,16 @@ class DiscordGateway:
                 picked = pool[:count]
 
                 if not picked:
-                    label = tr(L, "label_user") if target_uid else tr(L, "label_channel")
+                    label = self.t("label_user") if target_uid else self.t("label_channel")
                     msg_id_sent = send_message(
                         self.token, channel_id,
-                        tr(L, "snipe_none", label=label)
+                        self.t("snipe_empty", label=label)
                     )
                 else:
-                    lines = [tr(L, "snipe_header", n=len(picked), total=len(pool))]
+                    lines = [self.t("snipe_header", picked=len(picked), total=len(pool))]
                     for i, s in enumerate(picked, 1):
                         ts  = s.get("timestamp", "")[:19].replace("T", " ") if s.get("timestamp") else "?"
-                        lines.append(f"**{i}. {s.get('author', '?')}** `{ts}`:\n{s.get('content', '')}")
+                        lines.append(f"**{i}. {s.get('author', '?')}** @ `{ts}`:\n{s.get('content', '')}")
                     body = "\n\n".join(lines)
                     if len(body) > 1900:
                         body = body[:1897] + "..."
@@ -2007,13 +2104,13 @@ class DiscordGateway:
                 picked = pool[:count]
 
                 if not picked:
-                    label = tr(L, "label_user") if target_uid else tr(L, "label_channel")
+                    label = self.t("label_user") if target_uid else self.t("label_channel")
                     msg_id_sent = send_message(
                         self.token, channel_id,
-                        tr(L, "log_none", label=label)
+                        self.t("log_empty", label=label)
                     )
                 else:
-                    lines = [tr(L, "log_header", n=len(picked), total=len(pool))]
+                    lines = [self.t("log_header", picked=len(picked), total=len(pool))]
                     for i, e in enumerate(picked, 1):
                         ts = ts_to_str(e.get("edited_at", 0))
                         before = e.get("before", "")
@@ -2021,9 +2118,9 @@ class DiscordGateway:
                         if len(before) > 400: before = before[:397] + "..."
                         if len(after) > 400:  after  = after[:397] + "..."
                         lines.append(
-                            f"**{i}. {e.get('author', '?')}** `{ts}`:\n"
-                            f"{tr(L, 'log_before', v=before)}\n"
-                            f"{tr(L, 'log_after', v=after)}"
+                            f"**{i}. {e.get('author', '?')}** @ `{ts}`:\n"
+                            f"{self.t('log_before')} {before}\n"
+                            f"{self.t('log_after')} {after}"
                         )
                     body = "\n\n".join(lines)
                     if len(body) > 1900:
@@ -2041,6 +2138,7 @@ class DiscordGateway:
             self.farm_stop_event.set()
         if self.nhay_stop_event:
             self.nhay_stop_event.set()
+        self._afk_cancel_all_timers()
         self.running = False
         try:
             if self.ws:
@@ -2051,20 +2149,15 @@ class DiscordGateway:
 
 # ─── CUSTOM STATUS LOOP ──────────────────────────────────────────────────────
 
-def custom_status_loop(token, custom_texts, delay=5, stop_event=None):
-    if not custom_texts:
-        return
+def custom_status_loop(token, custom_texts):
     index = 0
     while True:
-        if stop_event is not None and stop_event.is_set():
-            return
-        change_custom_status(token, custom_texts[index])
-        index = (index + 1) % len(custom_texts)
-        if stop_event is not None:
-            if stop_event.wait(delay):
-                return
-        else:
-            time.sleep(delay)
+        try:
+            change_custom_status(token, custom_texts[index])
+            index = (index + 1) % len(custom_texts)
+        except Exception:
+            pass
+        time.sleep(1)
 
 
 # ─── MAIN ────────────────────────────────────────────────────────────────────
@@ -2082,31 +2175,25 @@ def main():
         return
 
     app_id           = config.get("application_id", "").strip()
-    _env_st = os.environ.get("START_TIME", "").strip().strip('"').strip("'")
-    _cfg_st = config.get("start_time", "now").strip().strip('"').strip("'")
-    start_time_mode  = _env_st or _cfg_st or "now"
-    start_time       = resolve_start_time(start_time_mode)
-    _src = "Railway env" if _env_st else "config.txt"
-    print(f"[*] start_time: {start_time_mode!r} (from {_src}) → {start_time} seconds")
+    auto_custom      = config.get("autochangecustomstatus", "False").lower() == "true"
+    auto_change_stream = config.get("autochangestream", "False").lower() == "true"
+    start_time       = resolve_start_time(config.get("start_time", "now"))
+    print(f"[*] start_time -> {start_time} ms")
 
-    sc          = None
-    asset_cache = {}
+    sc = None
     if app_id:
         sc = load_stream_config()
         if sc is None or not sc.get("line1"):
             sc = None
-            print("[!] stream.txt missing or line1 not set — stream disabled for all tokens")
+            print("[!] stream.txt missing or line1 not set - stream disabled for all tokens")
 
     gateways    = []
     first_token = None
-    custom_threads = []
-    original_custom_map = {}
-    custom_token_map = {}
 
     for idx, token in enumerate(tokens, start=1):
         account_name, user_id = check_token(token)
         if not account_name:
-            print(f"[!] Token {idx} invalid — skipped")
+            print(f"[!] Token {idx} invalid - skipped")
             continue
 
         rpc_type      = int(get_per_token(config, "rpc_type", idx) or "2")
@@ -2117,30 +2204,21 @@ def main():
         token_stream  = get_per_token(config, "stream",   idx).lower() == "true"
         token_fakelive= get_per_token(config, "fakelive", idx).lower() == "true"
 
-        token_autochangestream = (
-            get_per_token(config, "autochangestream", idx).lower() == "true"
-        )
-        token_rotate_delay = parse_duration_or_default(
-            get_per_token(config, "stream_rotate_delay", idx) or "5",
-            default=5
-        )
+        _sb_cfg = get_per_token(config, "SELFBOT", idx).strip().lower()
+        _sb_env = os.environ.get(f"SELFBOT_{idx}" if idx > 1 else "SELFBOT", "").strip().lower()
+        _sb_val = _sb_cfg or _sb_env or "true"
+        token_commands = _sb_val not in ("false", "0", "off", "no")
 
-        token_autocustom = (
-            get_per_token(config, "autochangecustomstatus", idx).lower() == "true"
-        )
-        token_custom_delay = parse_duration_or_default(
-            get_per_token(config, "customstatus_delay", idx) or "5",
-            default=5
-        )
+        # Language per token
+        lang_raw = get_per_token(config, "language", idx).strip().lower()
+        lang = lang_raw if lang_raw in SUPPORTED_LANGS else DEFAULT_LANG
 
-        token_lang = (get_per_token(config, "language", idx) or "en").strip().lower()
-        if token_lang not in ("en", "vi"):
-            token_lang = "en"
+        ar_enabled = get_per_token(config, "auto_react", idx).strip().lower() == "true"
+        ar_emojis_raw = get_per_token(config, "auto_react_emojis", idx).strip()
+        ar_emojis = parse_emoji_list(ar_emojis_raw) or ["👀", "🔥"]
+        ar_target_raw = get_per_token(config, "auto_react_target", idx).strip()
+        ar_target = parse_react_target(ar_target_raw) if ar_target_raw else {"mode": "all"}
 
-        _sb_suffix    = "" if idx == 1 else f"_{idx}"
-        _sb_val       = (os.environ.get(f"SELFBOT{_sb_suffix}", "").strip().lower()
-                         or os.environ.get("SELFBOT", "true").strip().lower())
-        token_commands= _sb_val not in ("false", "0", "off", "no")
         env_suffix = "" if idx == 1 else f"_{idx}"
         guild_id   = os.environ.get(f"GUILD_ID{env_suffix}", "").strip() or guild_id
         voice_ch   = os.environ.get(f"VOICE_CHANNEL_ID{env_suffix}", "").strip() or voice_ch
@@ -2164,7 +2242,7 @@ def main():
             activity=activity,
             stream_config=sc if token_stream else None,
             app_id=app_id if token_stream else None,
-            auto_change_stream=token_autochangestream if token_stream else False,
+            auto_change_stream=auto_change_stream if token_stream else False,
             asset_cache=cur_cache,
             start_time=start_time,
             auto_join_voice=auto_voice,
@@ -2175,57 +2253,55 @@ def main():
             rpc_name=rpc_name,
             token_index=idx,
             commands_enabled=token_commands,
-            stream_rotate_delay=token_rotate_delay,
-            language=token_lang,
+            lang=lang,
+            auto_react=ar_enabled,
+            auto_react_emojis=ar_emojis,
+            auto_react_target=ar_target,
         )
         gw.start()
         gateways.append(gw)
 
-        print(f"[*] Connected | {account_name} | rpc_name={rpc_name} | rpc_type={rpc_type} | stream={token_stream} | autochangestream={token_autochangestream} | rotate_delay={token_rotate_delay}s | fakelive={token_fakelive} | lang={token_lang} | start_time={start_time}")
+        print(f"[*] Connected | {account_name} | rpc_name={rpc_name} | rpc_type={rpc_type} | stream={token_stream} | fakelive={token_fakelive} | commands={token_commands} | lang={lang}")
         if auto_voice:
             print(f"[*] [{account_name}] Auto join voice: {voice_ch}")
         if token_fakelive:
             print(f"[*] [{account_name}] Fake live enabled")
-        if token_autocustom:
-            print(f"[*] [{account_name}] Auto change custom status enabled | delay={token_custom_delay}s")
+        if ar_enabled:
+            tgt = ar_target.get("mode", "all")
+            if tgt == "user":
+                tgt += " " + ",".join(ar_target.get("ids", []))
+            print(f"[*] [{account_name}] Auto react: {ar_emojis} -> {tgt}")
 
         if idx == 1:
             first_token = token
-
-        if token_autocustom:
-            custom_texts = load_custom_statuses()
-            if len(custom_texts) <= 1:
-                print(f"[!] customstatus.txt needs at least 2 lines — token {idx} custom status disabled")
-            else:
-                original_custom_map[token] = get_current_custom_status(token)
-                custom_token_map[token]   = custom_texts
-                stop_ev = threading.Event()
-                th = threading.Thread(
-                    target=custom_status_loop,
-                    args=(token, custom_texts, token_custom_delay, stop_ev),
-                    daemon=True
-                )
-                th.start()
-                custom_threads.append((th, stop_ev))
 
     if not gateways:
         print("[!] No valid tokens. Exiting.")
         return
 
+    original_custom = None
+    if auto_custom and first_token:
+        custom_texts = load_custom_statuses()
+        if len(custom_texts) <= 1:
+            print("[!] customstatus.txt needs at least 2 lines - disabled")
+            auto_custom = False
+        else:
+            original_custom = get_current_custom_status(first_token)
+
     def restore(sig, frame):
         for gw in gateways:
             gw.stop()
-        for th, ev in custom_threads:
-            ev.set()
-        for tok, orig in original_custom_map.items():
-            if orig is not None:
-                restore_custom_status(tok, orig)
+        if auto_custom and first_token and original_custom is not None:
+            restore_custom_status(first_token, original_custom)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, restore)
 
-    while True:
-        time.sleep(1)
+    if auto_custom and first_token:
+        custom_status_loop(first_token, custom_texts)
+    else:
+        while True:
+            time.sleep(1)
 
 
 if __name__ == "__main__":

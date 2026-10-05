@@ -1,13 +1,8 @@
-# ─── Tokens ──────────────────────────────────────────────────────────
-# Discord user tokens, one per account. Add token_2, token_3, ... for more.
-# WARNING: never commit real tokens. Use env vars or a private config.
-token=YOUR_TOKEN_HERE
-token_2=YOUR_TOKEN_2_HERE
-token_3=YOUR_TOKEN_3_HERE
+token=
+token_2=
+token_3=
 
-# ─── Discord application ID ──────────────────────────────────────────
-# Required for RPC/rich presence features.
-application_id=YOUR_APPLICATION_ID_HERE
+application_id=1546092498063986698
 
 # ─── Per-token language ──────────────────────────────────────────────
 # en = English | vi = Vietnamese
@@ -18,15 +13,15 @@ language_3=en
 
 # ─── Per-token auto change custom status ─────────────────────────────
 # toggle per token
-autochangecustomstatus=false
-autochangecustomstatus_2=false
-autochangecustomstatus_3=false
+autochangecustomstatus=true
+autochangecustomstatus_2=true
+autochangecustomstatus_3=true
 
 # delay between status changes: supports s / m / h / d
 # eg: 5 = 5s | 30s | 5m = 5 minutes | 2h | 1d | 7d | 30d
-customstatus_delay=5
-customstatus_delay_2=5
-customstatus_delay_3=5
+customstatus_delay=30s
+customstatus_delay_2=30s
+customstatus_delay_3=30s
 
 # ─── Per-token auto change stream (RPC rotate) ───────────────────────
 # rotates between slot A and slot B in stream.txt
@@ -46,27 +41,40 @@ stream_2=true
 stream_3=true
 
 # ─── Auto join voice ─────────────────────────────────────────────────
-auto_join_voice=false
-guild_id=YOUR_GUILD_ID_HERE
-voice_channel_id=YOUR_VOICE_CHANNEL_ID_HERE
+auto_join_voice=true
+guild_id=
+voice_channel_id=
 
-auto_join_voice_2=false
-guild_id_2=YOUR_GUILD_ID_2_HERE
-voice_channel_id_2=YOUR_VOICE_CHANNEL_ID_2_HERE
+auto_join_voice_2=true
+guild_id_2=
+voice_channel_id_2=
 
-auto_join_voice_3=false
-guild_id_3=YOUR_GUILD_ID_3_HERE
-voice_channel_id_3=YOUR_VOICE_CHANNEL_ID_3_HERE
+auto_join_voice_3=true
+guild_id_3=
+voice_channel_id_3=
 
 # ─── Fake live (only meaningful when auto_join_voice is on) ──────────
-fakelive=false
-fakelive_2=false
-fakelive_3=false
+fakelive=true
+fakelive_2=true
+fakelive_3=true
 
 # ─── Selfbot commands toggle per token ───────────────────────────────
 SELFBOT=true
 SELFBOT_2=true
 SELFBOT_3=true
+
+# ─── Auto react (per token) ──────────────────
+auto_react_1=true
+auto_react_emojis_1=👀,🔥,🐄
+auto_react_target_1=
+
+auto_react_2=true
+auto_react_emojis_2=👀,🔥,🐄
+auto_react_target_2=
+
+auto_react_3=true
+auto_react_emojis_3=👀,🔥,🐄
+auto_react_target_3=
 
 # ─── RPC start time ──────────────────────────────────────────────────
 # elapsed, now, today, 1y, 3y, 30d, 180d, or a unix timestamp
@@ -79,9 +87,9 @@ rpc_type_2=2
 rpc_type_3=2
 
 # ─── RPC name per token ──────────────────────────────────────────────
-rpc_name=MyApp
-rpc_name_2=MyApp2
-rpc_name_3=MyApp3
+rpc_name=
+rpc_name_2=
+rpc_name_3=
 
 # ─── Game activity presets (unused placeholder) ──────────────────────
 # game preset: roblox, minecraft, valorant, cs2, lol
